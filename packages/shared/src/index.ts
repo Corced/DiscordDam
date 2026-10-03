@@ -2,6 +2,7 @@
 export const INTERNAL_HEALTH_PATH = "/internal/health";
 
 export * from "./types/verification.js";
+export * from "./types/internal.js";
 
 /** Product name used in logs and health payloads. */
 export const APP_NAME = "DiscordGate";

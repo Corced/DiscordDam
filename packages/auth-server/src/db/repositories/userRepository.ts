@@ -1,6 +1,7 @@
 import { query } from "../pool.js";
 import { AuditEventType } from "@discordgate/shared";
 import { auditRepository } from "./auditRepository.js";
+import type { UserApiStats } from "@discordgate/shared";
 
 export interface User {
   id: string;
@@ -72,6 +73,27 @@ export const userRepository = {
     const row = rows[0];
     if (!row) throw new Error("upsertUser: RETURNING produced no row");
     return toUser(row);
+  },
+
+ /** Count users by role — feeds /botstats. */
+  async getUserStats(): Promise<UserApiStats> {
+    const { rows } = await pool.query<{ role: string; count: number }>(
+      "SELECT role, COUNT(*)::int AS count FROM users GROUP BY role",
+    );
+    const stats: UserApiStats = { active: 0, revoked: 0 };
+    for (const row of rows) {
+      if (row.role === "MEMBER") stats.active = row.count;
+      else if (row.role === "REVOKED") stats.revoked = row.count;
+    }
+    return stats;
+  },
+
+  /** Discord IDs of all MEMBER-role users (revoked excluded) — feeds /syncmembers. */
+  async getActiveUserIds(): Promise<string[]> {
+    const { rows } = await pool.query<{ discord_user_id: string }>(
+      "SELECT discord_user_id FROM users WHERE role = 'MEMBER'",
+    );
+    return rows.map((row) => row.discord_user_id);
   },
 
   async findByDiscordId(discordId: string): Promise<User | null> {

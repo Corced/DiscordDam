@@ -4,6 +4,7 @@
 // mechanism (established pattern; auth-server does the same with authConfig).
 import { botConfig } from "@discordgate/shared/config/botConfig.js";
 import { Events } from "discord.js";
+import { onInteractionCreate } from "./commands/index.js";
 import { client } from "./client.js";
 import { onReady } from "./events/ready.js";
 import { onGuildMemberRemove } from "./events/guildMemberRemove.js";
@@ -18,6 +19,7 @@ client.once(Events.ClientReady, onReady);
 client.on(Events.GuildMemberRemove, onGuildMemberRemove);
 client.on(Events.GuildBanAdd, onGuildBanAdd);
 client.on(Events.GuildMemberUpdate, onGuildMemberUpdate);
+client.on(Events.InteractionCreate, onInteractionCreate);
 
 startHttpServer();
 

@@ -1,25 +1,33 @@
-import http from "node:http";
-import { APP_NAME, INTERNAL_HEALTH_PATH } from "@discordgate/shared";
+// Config import first — crash-fast env validation (established pattern).
+import { authConfig } from "@discordgate/shared/config/authConfig.js";
+import "express-async-errors";
+import express, { type ErrorRequestHandler } from "express";
+import helmet from "helmet";
+import { authRouter } from "./routes/auth.js";
+import { tokenRouter } from "./routes/token.js";
+import { internalRouter } from "./routes/internal.js";
+import { errorHandler } from "./middleware/index.js";
+import { logger } from "./utils/logger.js";
 
-// ponytail: health-only server; OAuth2 routes land in a later milestone
-const port = Number(process.env.PORT ?? 3001);
+const app = express();
+// Behind nginx/compose: trust the proxy so req.ip is the real client IP
+// (rate-limit buckets and session records key off it).
+app.set("trust proxy", 1);
+app.use(helmet());
 
-const server = http.createServer((req, res) => {
-  if (req.url === INTERNAL_HEALTH_PATH) {
-    res.writeHead(200, { "content-type": "application/json" });
-    res.end(JSON.stringify({ app: APP_NAME, service: "auth-server", status: "ok" }));
-    return;
-  }
-  res.writeHead(404, { "content-type": "application/json" });
-  res.end(JSON.stringify({ error: "not_found" }));
-});
+app.use(authRouter);
+app.use(tokenRouter);
+app.use(internalRouter);
 
-server.listen(port, () => {
-  console.log(`[${APP_NAME}] auth-server listening on :${port}`);
-});
-
-for (const signal of ["SIGINT", "SIGTERM"] as const) {
-  process.on(signal, () => {
-    server.close(() => process.exit(0));
+const eh: ErrorRequestHandler = (err, _req, res, _next) => {
+  logger.error("Unhandled request error", {
+    error: err instanceof Error ? err.message : String(err),
   });
-}
+  res.status(500).json({ error: "Internal server error", code: "INTERNAL_ERROR" });
+};
+app.use(eh);
+
+const port = Number(authConfig.AUTH_SERVER_PORT);
+app.listen(port, () => {
+  logger.info("Auth server listening", { port });
+});

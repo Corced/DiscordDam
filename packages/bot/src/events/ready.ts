@@ -1,7 +1,7 @@
 import { botConfig } from "@discordgate/shared/config/botConfig.js";
 import { client } from "../client.js";
 import { logger } from "../utils/logger.js";
-
+import { registerCommands } from "../commands/index.js";
 /**
  * ClientReady handler: confirms the target guild is accessible, then logs
  * bot tag, guild name, and member count. Exits the process if the target
@@ -21,6 +21,7 @@ export async function onReady(): Promise<void> {
       guild: guild.name,
       memberCount: guild.memberCount,
     });
+    await registerCommands();
   } catch (error) {
     logger.error("Ready handler failed", { error: error });
   }
