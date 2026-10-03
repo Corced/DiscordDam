@@ -1,0 +1,16 @@
+{
+  "name": "@discordgate/bot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -b",
+    "dev": "tsc -b --watch",
+    "start": "node dist/index.js",
+    "clean": "tsc -b --clean"
+  },
+  "dependencies": {
+    "@discordgate/shared": "workspace:*",
+    "discord.js": "^14.16.3"
+  }
+}

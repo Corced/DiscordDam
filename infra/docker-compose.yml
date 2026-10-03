@@ -1,0 +1,21 @@
+# Minimal service wiring — expanded in MP-12 (Postgres, Redis, Nginx).
+name: discordgate
+
+services:
+  auth-server:
+    build:
+      context: ..
+      dockerfile: packages/auth-server/Dockerfile
+    env_file:
+      - ../.env
+    ports:
+      - "3001:3001"
+
+  bot:
+    build:
+      context: ..
+      dockerfile: packages/bot/Dockerfile
+    env_file:
+      - ../.env
+    ports:
+      - "3002:3002"

@@ -1,0 +1,19 @@
+{
+  "name": "@discordgate/auth-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -b",
+    "dev": "tsc -b --watch",
+    "start": "node dist/index.js",
+    "clean": "tsc -b --clean"
+  },
+  "dependencies": {
+    "@discordgate/shared": "workspace:*",
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21"
+  }
+}

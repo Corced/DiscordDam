@@ -1,0 +1,36 @@
+# syntax=docker/dockerfile:1
+
+# ── builder: install dependencies and compile TypeScript ──────────────
+FROM node:20-alpine AS builder
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable
+WORKDIR /app
+
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY packages/shared/package.json packages/shared/
+COPY packages/bot/package.json packages/bot/
+COPY packages/auth-server/package.json packages/auth-server/
+
+RUN pnpm install --frozen-lockfile --filter "@discordgate/auth-server..."
+
+COPY tsconfig.base.json ./
+COPY packages/shared/ packages/shared/
+COPY packages/auth-server/ packages/auth-server/
+
+RUN pnpm --filter "@discordgate/auth-server..." run build
+
+# ── runner: production runtime, non-root user ─────────────────────────
+FROM node:20-alpine AS runner
+ENV NODE_ENV=production PORT=3001
+WORKDIR /app
+
+# Whole /app layout copied intact so pnpm's workspace symlinks keep resolving.
+COPY --from=builder /app ./
+
+USER node
+EXPOSE 3001
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget -q -O /dev/null "http://127.0.0.1:${PORT}/internal/health" || exit 1
+
+CMD ["node", "packages/auth-server/dist/index.js"]
