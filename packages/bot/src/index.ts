@@ -1,25 +1,24 @@
-import http from "node:http";
-import { APP_NAME, INTERNAL_HEALTH_PATH } from "@discordgate/shared";
+// Env validation runs first: importing shared botConfig performs the
+// crash-fast zod validation (all missing vars at once, non-zero exit) before
+// anything else executes — imports are hoisted, so import ORDER is the
+// mechanism (established pattern; auth-server does the same with authConfig).
+import { botConfig } from "@discordgate/shared/config/botConfig.js";
+import { Events } from "discord.js";
+import { client } from "./client.js";
+import { onReady } from "./events/ready.js";
+import { onGuildMemberRemove } from "./events/guildMemberRemove.js";
+import { onGuildBanAdd } from "./events/guildBanAdd.js";
+import { onGuildMemberUpdate } from "./events/guildMemberUpdate.js";
+import { startHttpServer } from "./http/server.js";
+import { logger } from "./utils/logger.js";
 
-// ponytail: health-only internal server; the Discord client lands in a later milestone
-const port = Number(process.env.BOT_PORT ?? 3002);
+logger.info("✅ Bot env validated");
 
-const server = http.createServer((req, res) => {
-  if (req.url === INTERNAL_HEALTH_PATH) {
-    res.writeHead(200, { "content-type": "application/json" });
-    res.end(JSON.stringify({ app: APP_NAME, service: "bot", status: "ok" }));
-    return;
-  }
-  res.writeHead(404, { "content-type": "application/json" });
-  res.end(JSON.stringify({ error: "not_found" }));
-});
+client.once(Events.ClientReady, onReady);
+client.on(Events.GuildMemberRemove, onGuildMemberRemove);
+client.on(Events.GuildBanAdd, onGuildBanAdd);
+client.on(Events.GuildMemberUpdate, onGuildMemberUpdate);
 
-server.listen(port, () => {
-  console.log(`[${APP_NAME}] bot internal server listening on :${port}`);
-});
+startHttpServer();
 
-for (const signal of ["SIGINT", "SIGTERM"] as const) {
-  process.on(signal, () => {
-    server.close(() => process.exit(0));
-  });
-}
+await client.login(botConfig.DISCORD_BOT_TOKEN);

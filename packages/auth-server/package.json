@@ -7,13 +7,20 @@
     "build": "tsc -b",
     "dev": "tsc -b --watch",
     "start": "node dist/index.js",
+    "db:migrate": "node dist/db/migrate.js",
     "clean": "tsc -b --clean"
   },
   "dependencies": {
     "@discordgate/shared": "workspace:*",
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "ioredis": "^5.4.1",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.13.1",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "@types/express": "^4.17.21"
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/pg": "^8.11.10"
   }
 }
