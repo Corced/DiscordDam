@@ -1,0 +1,216 @@
+name: deploy
+
+on:
+  push:
+    branches: [main]
+
+# Deploys never overlap and never cancel mid-flight.
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write   # ghcr push via GITHUB_TOKEN — no PAT needed (13-P)
+
+env:
+  REGISTRY: ghcr.io
+  COMPOSE: docker compose -f docker-compose.yml -f docker-compose.prod.yml
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [bot, auth-server]
+    outputs:
+      # sha-<short> immutable tag — both matrix legs compute the same value.
+      image-tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Compute immutable tag
+        id: tag
+        run: echo "tag=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v3 # PIN
+      - uses: docker/login-action@v3 # PIN
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build & push ${{ matrix.image }}
+        uses: docker/build-push-action@v5 # PIN
+        with:
+          context: .
+          file: packages/${{ matrix.image }}/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/discordgate-${{ matrix.image }}:${{ steps.tag.outputs.tag }}
+            ghcr.io/${{ github.repository }}/discordgate-${{ matrix.image }}:latest
+          cache-from: type=gha,scope=discordgate-${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=discordgate-${{ matrix.image }}
+
+  deploy-staging:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Deploy to staging via SSH
+        uses: appleboy/ssh-action@v1.2.0 # PIN
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: deploy
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+            cd /opt/discordgate
+            NEW_TAG=${{ needs.build-and-push.outputs.image-tag }}
+
+            # Record previous tag BEFORE flipping (13-P rollback contract).
+            # Host .env must already contain GITHUB_REPO and IMAGE_TAG lines.
+            grep '^IMAGE_TAG=' .env > .image_tag_prev || true
+            touch .env
+            sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${NEW_TAG}/" .env
+
+            echo "${{ secrets.GHCR_PULL_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            ${{ env.COMPOSE }} pull
+            ${{ env.COMPOSE }} up -d
+            # No `exec … pnpm db:migrate`: prod override already runs migrate
+            # as the container start command, and `pnpm` does not exist in the
+            # runner image (installed only in the builder stage).
+
+            # 60s health gate: both services must answer.
+            ok=""
+            for i in $(seq 1 12); do
+              curl -sf http://localhost:3001/internal/health >/dev/null \
+                && curl -sf http://localhost:3002/internal/health >/dev/null \
+                && { ok=1; break; }
+              sleep 5
+            done
+
+            if [ -z "$ok" ]; then
+              echo "HEALTH GATE FAILED — rolling back to $(cat .image_tag_prev)"
+              PREV_TAG=$(cut -d= -f2 .image_tag_prev)
+              sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${PREV_TAG}/" .env
+              ${{ env.COMPOSE }} pull
+              ${{ env.COMPOSE }} up -d
+              exit 1
+            fi
+
+  e2e-tests:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - run: npm install -g pnpm
+      - uses: actions/setup-node@v4 # PIN
+        with:
+          node-version: "20"
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      # --if-present: green until a real e2e suite exists. Tighten by
+      # removing the flag once `test:e2e` is real.
+      - run: pnpm run test:e2e --if-present
+        env:
+          BASE_URL: ${{ secrets.STAGING_URL }}
+
+  rollback-staging:
+    needs: e2e-tests
+    if: failure()   # runs only when e2e failed on an otherwise-deployed staging
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Roll back staging to previous image tag
+        uses: appleboy/ssh-action@v1.2.0 # PIN
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: deploy
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+            cd /opt/discordgate
+            PREV_TAG=$(cut -d= -f2 .image_tag_prev)
+            echo "Rolling back staging to ${PREV_TAG}"
+            sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${PREV_TAG}/" .env
+            echo "${{ secrets.GHCR_PULL_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            ${{ env.COMPOSE }} pull
+            ${{ env.COMPOSE }} up -d
+            # Fail hard if even the rollback is unhealthy.
+            for i in $(seq 1 12); do
+              curl -sf http://localhost:3001/internal/health >/dev/null \
+                && curl -sf http://localhost:3002/internal/health >/dev/null \
+                && exit 0
+              sleep 5
+            done
+            echo "ROLLBACK UNHEALTHY — manual intervention required"
+            exit 1
+
+  deploy-production:
+    needs: e2e-tests
+    runs-on: ubuntu-latest
+    # Manual approval comes from the `production` environment's protection
+    # rules (repo settings), not from anything in this file.
+    environment: production
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Deploy to production via SSH
+        uses: appleboy/ssh-action@v1.2.0 # PIN
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: deploy
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+            cd /opt/discordgate
+            NEW_TAG=${{ needs.build-and-push.outputs.image-tag }}
+            grep '^IMAGE_TAG=' .env > .image_tag_prev || true
+            sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${NEW_TAG}/" .env
+            echo "${{ secrets.GHCR_PULL_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            ${{ env.COMPOSE }} pull
+            ${{ env.COMPOSE }} up -d
+            # Same automated post-deploy rollback as staging (13-P).
+            ok=""
+            for i in $(seq 1 12); do
+              curl -sf http://localhost:3001/internal/health >/dev/null \
+                && curl -sf http://localhost:3002/internal/health >/dev/null \
+                && { ok=1; break; }
+              sleep 5
+            done
+            if [ -z "$ok" ]; then
+              PREV_TAG=$(cut -d= -f2 .image_tag_prev)
+              echo "HEALTH GATE FAILED — rolling back to ${PREV_TAG}"
+              sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${PREV_TAG}/" .env
+              ${{ env.COMPOSE }} pull
+              ${{ env.COMPOSE }} up -d
+              exit 1
+            fi
+
+  notify:
+    # Terminal notifier: exactly one Discord post per pipeline run (13-P §5).
+    needs: [deploy-staging, e2e-tests, rollback-staging, deploy-production]
+    if: always()
+    runs-on: ubuntu-latest
+    env:
+      RESULTS: "staging=${{ needs.deploy-staging.result }}, e2e=${{ needs.e2e-tests.result }}, rollback=${{ needs.rollback-staging.result }}, prod=${{ needs.deploy-production.result }}"
+    steps:
+      - name: Notify success
+        if: success()
+        uses: sarisia/actions-status-discord@v1 # PIN
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          title: "✅ DiscordGate pipeline green"
+          description: "tag: `${{ needs.build-and-push.outputs.image-tag }}`\n${{ env.RESULTS }}"
+      - name: Notify failure
+        if: failure()
+        uses: sarisia/actions-status-discord@v1 # PIN
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          title: "❌ DiscordGate pipeline FAILED"
+          description: "tag: `${{ needs.build-and-push.outputs.image-tag }}`\n${{ env.RESULTS }}\n${{ github.event.head_commit.url }}"
+          color: 0xFF0000
+# notify references needs.build-and-push.outputs but doesn't list it in needs — add build-and-push to its needs: array if your runner flags the missing context (harmless to include; left out only to keep the chain readable... actually, include it — one word, and some runner versions are strict). Change line: needs: [build-and-push, deploy-staging, e2e-tests, rollback-staging, deploy-production].

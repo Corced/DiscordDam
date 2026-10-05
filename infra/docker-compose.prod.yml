@@ -1,0 +1,36 @@
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# Requires GITHUB_REPO + IMAGE_TAG in env (CI exports them).
+# `!reset []` / `!reset null` needs docker compose ≥ 2.24 — see deviations.
+services:
+  postgres:
+    ports: !reset []      # no external exposure in prod
+  redis:
+    ports: !reset []
+  bot:
+    build: !reset null    # pull prebuilt image, never build on the server
+    volumes: !reset []    # no source mounts in prod
+    image: ghcr.io/${GITHUB_REPO}/discordgate-bot:${IMAGE_TAG}
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "0.5"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+  auth-server:
+    build: !reset null
+    volumes: !reset []
+    image: ghcr.io/${GITHUB_REPO}/discordgate-auth:${IMAGE_TAG}
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "0.5"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

@@ -1,21 +1,102 @@
-# Minimal service wiring — expanded in MP-12 (Postgres, Redis, Nginx).
-name: discordgate
-
+# Dev stack. No `version:` key — obsolete and warns in compose v2.
 services:
-  auth-server:
-    build:
-      context: ..
-      dockerfile: packages/auth-server/Dockerfile
-    env_file:
-      - ../.env
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      # $$ escapes compose interpolation → reads container's own env
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     ports:
-      - "3001:3001"
+      - "5432:5432"   # dev only — prod override strips this
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    ports:
+      - "6379:6379"   # dev only
 
   bot:
     build:
-      context: ..
+      context: .
       dockerfile: packages/bot/Dockerfile
-    env_file:
-      - ../.env
+    env_file: .env
+    environment:
+      # environment: beats env_file: — forces compose hostname regardless
+      # of any localhost value in .env used for local dev.
+      REDIS_URL: redis://redis:6379
+      # ALSO set your bot→auth webhook base URL (INTERNAL_API_URL / AUTH_SERVER_URL,
+      # whatever authWebhook.ts reads) to http://auth-server:3001 in .env.
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - internal
+      - default   # default needed for Discord gateway egress
+    restart: unless-stopped
+    volumes:
+      # Shadows source only; runtime executes dist/, so this is inert
+      # without a watcher. Exists for editor-side parity.
+      - ./packages/bot/src:/app/packages/bot/src
+
+  auth-server:
+    build:
+      context: .
+      dockerfile: packages/auth-server/Dockerfile
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379
     ports:
-      - "3002:3002"
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      bot:
+        condition: service_started
+    networks:
+      - internal
+      - default   # default needed for Discord API egress (OAuth exchange)
+    restart: unless-stopped
+    # Apply pending migrations, then serve. Requires the migrate runner to be
+    # idempotent (schema_migrations table) — see init.sql comment.
+    command: sh -c "node packages/auth-server/dist/db/migrate.js && node packages/auth-server/dist/index.js"
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infra/nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      - auth-server
+    restart: unless-stopped
+
+networks:
+  internal:
+    internal: true   # bot ↔ auth-server traffic stays off public interfaces
+
+volumes:
+  postgres_data:
+  redis_data:

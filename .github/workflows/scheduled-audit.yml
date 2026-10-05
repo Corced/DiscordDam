@@ -1,0 +1,167 @@
+name: scheduled-audit
+
+on:
+  schedule:
+    - cron: "0 9 * * 1"   # Monday 09:00 UTC
+  workflow_dispatch:      # manual runs for verification
+
+concurrency:
+  group: audit
+  cancel-in-progress: false   # audits never overlap
+
+permissions:
+  contents: read
+  issues: write      # audit-report creates/updates/closes the dedup issue
+  packages: read     # trivy pulls private ghcr images with GITHUB_TOKEN
+
+jobs:
+  audit-deps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - run: npm install -g pnpm
+      - uses: actions/setup-node@v4 # PIN
+        with:
+          node-version: "20"
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      # Exit code ignored — the report job decides what counts as a finding.
+      - run: pnpm audit --prod --audit-level=moderate --json > audit-deps.json || true
+      - run: pnpm outdated --format json > outdated.json || true   # informational
+      - uses: actions/upload-artifact@v4 # PIN
+        with:
+          name: scan-deps
+          path: |
+            audit-deps.json
+            outdated.json
+          if-no-files-found: warn
+          retention-days: 7
+
+  audit-images:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [bot, auth-server]
+    steps:
+      # exit-code 0 — findings are reported, not failed, in the weekly audit.
+      - name: Trivy scan ghcr image
+        uses: aquasecurity/trivy-action@0.28.0 # PIN
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}   # private ghcr pull auth
+        with:
+          image-ref: ghcr.io/${{ github.repository }}/discordgate-${{ matrix.image }}:latest
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          format: json
+          output: trivy-${{ matrix.image }}.json
+          exit-code: "0"
+      - uses: actions/upload-artifact@v4 # PIN
+        with:
+          name: scan-${{ matrix.image }}
+          path: trivy-${{ matrix.image }}.json
+          if-no-files-found: warn
+          retention-days: 7
+
+  audit-secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0   # full history — a shallow clone only scans the tip
+      # Runner has docker; scanning the checkout from a pinned gitleaks image
+      # avoids the action's license oddities. Image tag: pin a digest in prod.
+      - name: gitleaks full-history scan
+        run: |
+          docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest \
+            git /repo --report-format json --report-path /repo/gitleaks.json || true
+      - uses: actions/upload-artifact@v4 # PIN
+        with:
+          name: scan-secrets
+          path: gitleaks.json
+          if-no-files-found: warn
+          retention-days: 7
+
+  audit-report:
+    needs: [audit-deps, audit-images, audit-secrets]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4 # PIN
+        with:
+          pattern: scan-*
+          merge-multiple: true
+          path: scan-results
+      - name: Aggregate, dedup issue, count findings
+        id: report
+        uses: actions/github-script@v7 # PIN
+        with:
+          script: |
+            const fs = require('fs');
+            const read = f => { try { return JSON.parse(fs.readFileSync(`scan-results/${f}`, 'utf8')); } catch { return null; } };
+
+            const deps = read('audit-deps.json');
+            const depVulns = deps?.metadata?.vulnerabilities ?? {};
+            const depCount = (depVulns.high ?? 0) + (depVulns.critical ?? 0);
+            let imgCount = 0;
+            for (const f of ['trivy-bot.json', 'trivy-auth-server.json']) {
+              const t = read(f);
+              for (const r of t?.Results ?? []) imgCount += (r.Vulnerabilities ?? []).length;
+            }
+            const leaks = read('gitleaks.json');
+            const leakCount = Array.isArray(leaks) ? leaks.length : 0;
+            const total = depCount + imgCount + leakCount;
+
+            const date = new Date().toISOString().slice(0, 10);
+            const title = `🔒 Security audit ${date} — ${total} findings (deps:${depCount} images:${imgCount} secrets:${leakCount})`;
+            const body = [
+              `Weekly automated audit — [run ${context.runId}](${context.payload.repository.html_url}/actions/runs/${context.runId})`,
+              '', '| area | findings |', '|---|---|',
+              `| dependencies (high+critical) | ${depCount} |`,
+              `| container images | ${imgCount} |`,
+              `| secret leaks (full history) | ${leakCount} |`,
+              '',
+              depCount ? `**Deps**: \`pnpm audit\` locally for detail.` : '',
+              imgCount ? '**Images**: see uploaded trivy artifacts.' : '',
+              leakCount ? '**Secrets**: see gitleaks artifact — rotate anything real immediately.' : '',
+            ].filter(Boolean).join('\n');
+
+            const { data: open } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              labels: 'security,audit', state: 'open', per_page: 1,
+            });
+            const existing = open[0];
+
+            if (total > 0) {
+              if (existing) {
+                await github.rest.issues.update({ owner: context.repo.owner, repo: context.repo.repo, issue_number: existing.number, title });
+                await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: existing.number, body });
+                core.setOutput('issue_url', existing.html_url);
+              } else {
+                const { data: created } = await github.rest.issues.create({
+                  owner: context.repo.owner, repo: context.repo.repo,
+                  title, body, labels: ['security', 'audit', 'automated'],
+                });
+                core.setOutput('issue_url', created.html_url);
+              }
+              core.setOutput('findings', String(total));
+            } else if (existing) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo, issue_number: existing.number,
+                body: `Clean on run ${context.runId} (${date}). Closing.`,
+              });
+              await github.rest.issues.update({ owner: context.repo.owner, repo: context.repo.repo, issue_number: existing.number, state: 'closed' });
+              core.setOutput('findings', '0');
+            } else {
+              core.setOutput('findings', '0');   // clean run, nothing open: stay silent
+            }
+      - name: Notify Discord on findings
+        if: steps.report.outputs.findings != '0' && steps.report.outputs.findings != ''
+        uses: sarisia/actions-status-discord@v1 # PIN
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          title: "🔒 Security audit: ${{ steps.report.outputs.findings }} findings"
+          description: ${{ steps.report.outputs.issue_url }}
+          color: 0xFFA500

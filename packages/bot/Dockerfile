@@ -1,36 +1,42 @@
 # syntax=docker/dockerfile:1
 
-# ── builder: install dependencies and compile TypeScript ──────────────
 FROM node:20-alpine AS builder
-ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
-RUN corepack enable
 WORKDIR /app
+RUN npm install -g pnpm
 
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
-COPY packages/shared/package.json packages/shared/
-COPY packages/bot/package.json packages/bot/
-COPY packages/auth-server/package.json packages/auth-server/
+# Every workspace package manifest must exist BEFORE install —
+# pnpm --frozen-lockfile cannot resolve workspace:* deps without them.
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/auth-server/package.json ./packages/auth-server/
+COPY packages/bot/package.json ./packages/bot/
+# Delete the next line if packages/web isn't on disk in this checkout.
+COPY packages/web/package.json ./packages/web/
 
-RUN pnpm install --frozen-lockfile --filter "@discordgate/bot..."
+RUN pnpm install --frozen-lockfile
 
-COPY tsconfig.base.json ./
-COPY packages/shared/ packages/shared/
-COPY packages/bot/ packages/bot/
+COPY packages/ ./packages/
 
-RUN pnpm --filter "@discordgate/bot..." run build
+# `...` = also build workspace deps (shared) first, in topo order.
+# Path filter works regardless of the package's npm name.
+RUN pnpm --filter "./packages/bot..." build
 
-# ── runner: production runtime, non-root user ─────────────────────────
+
 FROM node:20-alpine AS runner
-ENV NODE_ENV=production BOT_PORT=3002
 WORKDIR /app
 
-# Whole /app layout copied intact so pnpm's workspace symlinks keep resolving.
+# Whole-tree copy: pnpm node_modules are relative symlinks inside /app,
+# copying everything wholesale keeps them valid with zero extra config.
+# ponytail: dev deps ride into the image; slim with `pnpm deploy` if size ever matters.
 COPY --from=builder /app ./
 
 USER node
+
 EXPOSE 3002
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget -q -O /dev/null "http://127.0.0.1:${BOT_PORT}/internal/health" || exit 1
+# HEALTHCHECK is baked at build time; ${BOT_PORT} from env_file does NOT
+# interpolate here. This literal must match BOT_PORT in .env.
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD wget -qO- http://localhost:3002/internal/health || exit 1
 
 CMD ["node", "packages/bot/dist/index.js"]

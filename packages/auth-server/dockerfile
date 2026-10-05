@@ -1,36 +1,37 @@
 # syntax=docker/dockerfile:1
 
-# ── builder: install dependencies and compile TypeScript ──────────────
 FROM node:20-alpine AS builder
-ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
-RUN corepack enable
 WORKDIR /app
+RUN npm install -g pnpm
 
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
-COPY packages/shared/package.json packages/shared/
-COPY packages/bot/package.json packages/bot/
-COPY packages/auth-server/package.json packages/auth-server/
+# Every workspace package manifest must exist BEFORE install —
+# pnpm --frozen-lockfile cannot resolve workspace:* deps without them.
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/auth-server/package.json ./packages/auth-server/
+COPY packages/bot/package.json ./packages/bot/
+# Delete the next line if packages/web isn't on disk in this checkout.
+COPY packages/web/package.json ./packages/web/
 
-RUN pnpm install --frozen-lockfile --filter "@discordgate/auth-server..."
+RUN pnpm install --frozen-lockfile
 
-COPY tsconfig.base.json ./
-COPY packages/shared/ packages/shared/
-COPY packages/auth-server/ packages/auth-server/
+COPY packages/ ./packages/
 
-RUN pnpm --filter "@discordgate/auth-server..." run build
+RUN pnpm --filter "./packages/auth-server..." build
 
-# ── runner: production runtime, non-root user ─────────────────────────
+
 FROM node:20-alpine AS runner
-ENV NODE_ENV=production PORT=3001
 WORKDIR /app
 
-# Whole /app layout copied intact so pnpm's workspace symlinks keep resolving.
+# ponytail: whole-tree copy keeps pnpm symlinks valid; `pnpm deploy` if size matters.
 COPY --from=builder /app ./
 
 USER node
+
 EXPOSE 3001
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget -q -O /dev/null "http://127.0.0.1:${PORT}/internal/health" || exit 1
+# Port literal must match PORT in .env (build-time, no env interpolation).
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD wget -qO- http://localhost:3001/internal/health || exit 1
 
 CMD ["node", "packages/auth-server/dist/index.js"]

@@ -8,7 +8,9 @@
     "dev": "tsc -b --watch",
     "start": "node dist/index.js",
     "db:migrate": "node dist/db/migrate.js",
-    "clean": "tsc -b --clean"
+    "clean": "tsc -b --clean",
+    "test:integration": "vitest run",
+    "test:unit": "vitest run --dir tests/unit"
   },
   "dependencies": {
     "@discordgate/shared": "workspace:*",
@@ -19,8 +21,10 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "@types/express": "^4.17.21",
-    "@types/jsonwebtoken": "^9.0.5",
-    "@types/pg": "^8.11.10"
+    "vitest": "^3.0.0",
+    "@vitest/coverage-v8": "^3.0.0",
+    "msw": "^2.7.0",
+    "supertest": "^7.0.0",
+    "@types/supertest": "^6.0.2"
   }
 }
