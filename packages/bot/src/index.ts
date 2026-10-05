@@ -2,7 +2,7 @@
 // crash-fast zod validation (all missing vars at once, non-zero exit) before
 // anything else executes — imports are hoisted, so import ORDER is the
 // mechanism (established pattern; auth-server does the same with authConfig).
-import { botConfig } from "@discordgate/shared/config/botConfig.js";
+import { botConfig } from "@DiscordDam/shared/config/botConfig.js";
 import { Events } from "discord.js";
 import { onInteractionCreate } from "./commands/index.js";
 import { client } from "./client.js";

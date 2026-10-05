@@ -5,7 +5,7 @@ export * from "./types/verification.js";
 export * from "./types/internal.js";
 
 /** Product name used in logs and health payloads. */
-export const APP_NAME = "DiscordGate";
+export const APP_NAME = "DiscordDam";
 
 /** Security audit event types — mirrored by the audit_log DB CHECK. */
 export { AuditEventType } from "./types/audit.js";

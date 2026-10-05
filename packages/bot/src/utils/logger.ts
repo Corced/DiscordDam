@@ -2,7 +2,7 @@
  * Structured JSON logger — one JSON object per line on stdout.
  * Mirrors `packages/auth-server/src/utils/logger.ts` until it is hoisted.
  */
-// ponytail: duplicate of auth-server's logger; hoist to @discordgate/shared
+// ponytail: duplicate of auth-server's logger; hoist to @DiscordDam/shared
 // on next touch (this is the 4th consumer) instead of keeping two copies.
 const LEVELS = { debug: 10, info: 20, warn: 30, error: 40 } as const;
 

@@ -1,7 +1,7 @@
 import { query } from "../pool.js";
-import { AuditEventType } from "@discordgate/shared";
+import { AuditEventType } from "@DiscordDam/shared";
 import { auditRepository } from "./auditRepository.js";
-import type { UserApiStats } from "@discordgate/shared";
+import type { UserApiStats } from "@DiscordDam/shared";
 
 export interface User {
   id: string;
@@ -75,7 +75,7 @@ export const userRepository = {
     return toUser(row);
   },
 
- /** Count users by role — feeds /botstats. */
+  /** Count users by role — feeds /botstats. */
   async getUserStats(): Promise<UserApiStats> {
     const { rows } = await pool.query<{ role: string; count: number }>(
       "SELECT role, COUNT(*)::int AS count FROM users GROUP BY role",
@@ -97,9 +97,7 @@ export const userRepository = {
   },
 
   async findByDiscordId(discordId: string): Promise<User | null> {
-    const { rows } = await query<UserRow>("SELECT * FROM users WHERE discord_id = $1", [
-      discordId,
-    ]);
+    const { rows } = await query<UserRow>("SELECT * FROM users WHERE discord_id = $1", [discordId]);
     const row = rows[0];
     return row ? toUser(row) : null;
   },
@@ -135,9 +133,9 @@ export const userRepository = {
     return row;
   },
 };
-packages/auth-server/src/db/repositories/sessionRepository.ts
+packages / auth - server / src / db / repositories / sessionRepository.ts;
 import { query } from "../pool.js";
-import { authConfig } from "@discordgate/shared/config/authConfig.js";
+import { authConfig } from "@DiscordDam/shared/config/authConfig.js";
 
 export interface Session {
   id: string;
@@ -236,9 +234,9 @@ export const sessionRepository = {
     return result.rowCount ?? 0;
   },
 };
-packages/auth-server/src/db/repositories/auditRepository.ts
+packages / auth - server / src / db / repositories / auditRepository.ts;
 import { query } from "../pool.js";
-import { AuditEventType } from "@discordgate/shared";
+import { AuditEventType } from "@DiscordDam/shared";
 
 export interface AuditEvent {
   eventType: AuditEventType;

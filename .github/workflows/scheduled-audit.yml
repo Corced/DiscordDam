@@ -2,17 +2,17 @@ name: scheduled-audit
 
 on:
   schedule:
-    - cron: "0 9 * * 1"   # Monday 09:00 UTC
-  workflow_dispatch:      # manual runs for verification
+    - cron: "0 9 * * 1" # Monday 09:00 UTC
+  workflow_dispatch: # manual runs for verification
 
 concurrency:
   group: audit
-  cancel-in-progress: false   # audits never overlap
+  cancel-in-progress: false # audits never overlap
 
 permissions:
   contents: read
-  issues: write      # audit-report creates/updates/closes the dedup issue
-  packages: read     # trivy pulls private ghcr images with GITHUB_TOKEN
+  issues: write # audit-report creates/updates/closes the dedup issue
+  packages: read # trivy pulls private ghcr images with GITHUB_TOKEN
 
 jobs:
   audit-deps:
@@ -28,7 +28,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       # Exit code ignored — the report job decides what counts as a finding.
       - run: pnpm audit --prod --audit-level=moderate --json > audit-deps.json || true
-      - run: pnpm outdated --format json > outdated.json || true   # informational
+      - run: pnpm outdated --format json > outdated.json || true # informational
       - uses: actions/upload-artifact@v4 # PIN
         with:
           name: scan-deps
@@ -50,9 +50,9 @@ jobs:
         uses: aquasecurity/trivy-action@0.28.0 # PIN
         env:
           TRIVY_USERNAME: ${{ github.actor }}
-          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}   # private ghcr pull auth
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }} # private ghcr pull auth
         with:
-          image-ref: ghcr.io/${{ github.repository }}/discordgate-${{ matrix.image }}:latest
+          image-ref: ghcr.io/${{ github.repository }}/DiscordDam-${{ matrix.image }}:latest
           severity: HIGH,CRITICAL
           ignore-unfixed: true
           format: json
@@ -70,7 +70,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          fetch-depth: 0   # full history — a shallow clone only scans the tip
+          fetch-depth: 0 # full history — a shallow clone only scans the tip
       # Runner has docker; scanning the checkout from a pinned gitleaks image
       # avoids the action's license oddities. Image tag: pin a digest in prod.
       - name: gitleaks full-history scan

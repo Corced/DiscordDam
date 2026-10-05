@@ -22,9 +22,7 @@ export async function runMigrations(): Promise<void> {
     )
   `);
 
-  const { rows } = await pool.query<{ filename: string }>(
-    "SELECT filename FROM schema_migrations",
-  );
+  const { rows } = await pool.query<{ filename: string }>("SELECT filename FROM schema_migrations");
   const applied = new Set(rows.map((row) => row.filename));
 
   // Alphabetical = chronological as long as filenames stay zero-padded.
@@ -57,7 +55,7 @@ export async function runMigrations(): Promise<void> {
   console.info(`✅ migrations complete: ${count} applied this run, ${files.length} known`);
 }
 
-// CLI entry: pnpm --filter @discordgate/auth-server db:migrate
+// CLI entry: pnpm --filter @DiscordDam/auth-server db:migrate
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   runMigrations()
     .then(() => pool.end())

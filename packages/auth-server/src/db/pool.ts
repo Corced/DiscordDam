@@ -1,6 +1,6 @@
 import pg from "pg";
 import type { QueryResult, QueryResultRow } from "pg";
-import { authConfig } from "@discordgate/shared/config/authConfig.js";
+import { authConfig } from "@DiscordDam/shared/config/authConfig.js";
 
 /** Single shared pg pool — one per process, sized for a small API service. */
 export const pool = new pg.Pool({

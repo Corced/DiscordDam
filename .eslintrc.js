@@ -1,6 +1,6 @@
 "use strict";
 
-/** Shared ESLint config for all DiscordGate workspaces. */
+/** Shared ESLint config for all DiscordDam workspaces. */
 module.exports = {
   root: true,
   parser: "@typescript-eslint/parser",

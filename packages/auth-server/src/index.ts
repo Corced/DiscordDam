@@ -1,5 +1,5 @@
 // Config import first — crash-fast env validation (established pattern).
-import { authConfig } from "@discordgate/shared/config/authConfig.js";
+import { authConfig } from "@DiscordDam/shared/config/authConfig.js";
 import "express-async-errors";
 import express, { type ErrorRequestHandler } from "express";
 import helmet from "helmet";

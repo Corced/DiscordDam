@@ -1,4 +1,4 @@
--- DiscordGate — migration 001: initial schema
+-- DiscordDam — migration 001: initial schema
 --
 -- Applied by src/db/migrate.ts inside a transaction that also writes the
 -- schema_migrations row. Do NOT put BEGIN/COMMIT in this file — the runner

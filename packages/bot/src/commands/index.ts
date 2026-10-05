@@ -1,5 +1,5 @@
 import { REST, Routes, type ChatInputCommandInteraction, type Interaction } from "discord.js";
-import { botConfig } from "@discordgate/shared/config/botConfig.js";
+import { botConfig } from "@DiscordDam/shared/config/botConfig.js";
 import { logger } from "../utils/logger.js";
 import { checkAccessCommand, handleCheckAccess } from "./checkaccess.js";
 import { revokeAccessCommand, handleRevokeAccess } from "./revokeaccess.js";

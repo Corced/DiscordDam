@@ -1,5 +1,5 @@
 import Redis from "ioredis";
-import { authConfig } from "@discordgate/shared/config/authConfig.js";
+import { authConfig } from "@DiscordDam/shared/config/authConfig.js";
 
 // ── Key namespaces ────────────────────────────────────────────────────────
 
@@ -180,8 +180,9 @@ export class RedisService {
   }
 
   async isBlacklisted(jti: string): Promise<boolean> {
-    return this.exec("isBlacklisted", async () =>
-      (await this.redis.exists(`${BLACKLIST_PREFIX}${jti}`)) === 1,
+    return this.exec(
+      "isBlacklisted",
+      async () => (await this.redis.exists(`${BLACKLIST_PREFIX}${jti}`)) === 1,
     );
   }
 
@@ -200,8 +201,9 @@ export class RedisService {
   }
 
   async isWhitelisted(discordUserId: string): Promise<boolean> {
-    return this.exec("isWhitelisted", async () =>
-      (await this.redis.exists(`${WHITELIST_PREFIX}${discordUserId}`)) === 1,
+    return this.exec(
+      "isWhitelisted",
+      async () => (await this.redis.exists(`${WHITELIST_PREFIX}${discordUserId}`)) === 1,
     );
   }
 

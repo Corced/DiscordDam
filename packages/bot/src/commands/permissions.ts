@@ -1,5 +1,5 @@
 import { PermissionFlagsBits, type ChatInputCommandInteraction } from "discord.js";
-import { botConfig } from "@discordgate/shared/config/botConfig.js";
+import { botConfig } from "@DiscordDam/shared/config/botConfig.js";
 
 /**
  * Moderator permission model, checked in order:

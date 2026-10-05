@@ -1,4 +1,4 @@
-import { botConfig } from "@discordgate/shared/config/botConfig.js";
+import { botConfig } from "@DiscordDam/shared/config/botConfig.js";
 import { client } from "../client.js";
 import { logger } from "../utils/logger.js";
 import { registerCommands } from "../commands/index.js";

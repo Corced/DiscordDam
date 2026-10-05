@@ -1,4 +1,4 @@
-import { botConfig } from "@discordgate/shared/config/botConfig.js";
+import { botConfig } from "@DiscordDam/shared/config/botConfig.js";
 import { logger } from "../utils/logger.js";
 
 const REQUEST_TIMEOUT_MS = 5_000;

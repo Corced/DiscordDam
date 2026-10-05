@@ -1,6 +1,6 @@
 import { Router } from "express";
 import cookieParser from "cookie-parser";
-import { TokenBlacklistedError, type VerificationResult } from "@discordgate/shared";
+import { TokenBlacklistedError, type VerificationResult } from "@DiscordDam/shared";
 import { requestLogger, refreshLimiter } from "../middleware/index.js";
 import { guildVerifier } from "../services/guildVerifier.js";
 import { jwtService } from "../services/jwtService.js";

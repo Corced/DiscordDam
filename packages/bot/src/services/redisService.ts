@@ -1,5 +1,5 @@
 import Redis from "ioredis";
-import { botConfig } from "@discordgate/shared/config/botConfig.js";
+import { botConfig } from "@DiscordDam/shared/config/botConfig.js";
 import { logger } from "../utils/logger.js";
 
 const SYNC_LOCK_TTL_SECONDS = 600;

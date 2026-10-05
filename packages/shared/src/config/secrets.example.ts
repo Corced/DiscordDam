@@ -25,7 +25,7 @@ export const GENERATION_COMMANDS = {
     login: "doppler login",
     setup: "doppler setup",
     set: "doppler secrets set JWT_SECRET BOT_INTERNAL_SECRET",
-    run: "doppler run -- pnpm --filter @discordgate/auth-server start",
+    run: "doppler run -- pnpm --filter @DiscordDam/auth-server start",
   },
 
   /** GitHub Actions — repository secrets for CI/CD workflows. */
@@ -41,7 +41,7 @@ export const GENERATION_COMMANDS = {
 } as const;
 packages/shared/package.json (updated — zod + config subpath exports)
 {
-  "name": "@discordgate/shared",
+  "name": "@DiscordDam/shared",
   "version": "0.1.0",
   "private": true,
   "type": "module",

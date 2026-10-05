@@ -1,8 +1,8 @@
 import { createHash, randomBytes } from "node:crypto";
 import axios, { type AxiosInstance } from "axios";
-import { authConfig } from "@discordgate/shared/config/authConfig.js";
+import { authConfig } from "@DiscordDam/shared/config/authConfig.js";
 import { redisService } from "./redisService.js";
-import { logger } from "../utils/logger.js";;
+import { logger } from "../utils/logger.js";
 
 const DISCORD_API_BASE_URL = "https://discord.com/api";
 const DISCORD_AUTHORIZE_URL = "https://discord.com/api/oauth2/authorize";
@@ -65,8 +65,7 @@ export class DiscordOAuthService {
    */
   public constructor(httpClient?: AxiosInstance) {
     this.httpClient =
-      httpClient ??
-      axios.create({ baseURL: DISCORD_API_BASE_URL, timeout: REQUEST_TIMEOUT_MS });
+      httpClient ?? axios.create({ baseURL: DISCORD_API_BASE_URL, timeout: REQUEST_TIMEOUT_MS });
   }
 
   /**

@@ -11,7 +11,7 @@ concurrency:
 
 permissions:
   contents: read
-  pull-requests: write   # pr-summary comment upsert
+  pull-requests: write # pr-summary comment upsert
 
 jobs:
   lint-and-type-check:
@@ -34,7 +34,7 @@ jobs:
     # No `needs:` — 13-P: fan-in only at pr-summary; everything parallel.
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false   # one package's failure shouldn't hide the others
+      fail-fast: false # one package's failure shouldn't hide the others
       matrix:
         workspace: [shared, auth-server, bot, web]
     steps:
@@ -62,12 +62,12 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_DB: discordgate_test
+          POSTGRES_DB: DiscordDam_test
           POSTGRES_USER: testuser
           POSTGRES_PASSWORD: testpass
-        ports: ["5432:5432"]   # required — without this localhost is unreachable
+        ports: ["5432:5432"] # required — without this localhost is unreachable
         options: >-
-          --health-cmd "pg_isready -U testuser -d discordgate_test"
+          --health-cmd "pg_isready -U testuser -d DiscordDam_test"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -81,7 +81,7 @@ jobs:
     env:
       # Spec used *_TEST suffixed names — the zod config reads these exact
       # names at import time and would crash on the suffixed ones.
-      DATABASE_URL: postgresql://testuser:testpass@localhost:5432/discordgate_test
+      DATABASE_URL: postgresql://testuser:testpass@localhost:5432/DiscordDam_test
       REDIS_URL: redis://localhost:6379
       NODE_ENV: test
     steps:
@@ -114,15 +114,15 @@ jobs:
           # load:true — without this the image never reaches the local
           # daemon (buildx container driver) and Trivy would have nothing to scan.
           load: true
-          tags: discordgate-${{ matrix.image }}:ci
-          cache-from: type=gha,scope=discordgate-${{ matrix.image }}
-          cache-to: type=gha,mode=max,scope=discordgate-${{ matrix.image }}
+          tags: DiscordDam-${{ matrix.image }}:ci
+          cache-from: type=gha,scope=DiscordDam-${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=DiscordDam-${{ matrix.image }}
       # Trivy image scan lives IN THIS JOB — a separate job gets a fresh
       # runner and the loaded image would be gone (spec had this cross-job; broken).
       - name: Trivy scan ${{ matrix.image }}
         uses: aquasecurity/trivy-action@0.28.0 # PIN
         with:
-          image-ref: discordgate-${{ matrix.image }}:ci
+          image-ref: DiscordDam-${{ matrix.image }}:ci
           severity: CRITICAL
           ignore-unfixed: true
           exit-code: 1
@@ -150,7 +150,8 @@ jobs:
           exit-code: 1
 
   pr-summary:
-    needs: [lint-and-type-check, unit-tests, integration-tests, docker-build-validation, security-scan]
+    needs:
+      [lint-and-type-check, unit-tests, integration-tests, docker-build-validation, security-scan]
     if: always()
     runs-on: ubuntu-latest
     env:

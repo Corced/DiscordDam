@@ -1,12 +1,12 @@
 import axios, { AxiosError, type AxiosInstance } from "axios";
 import pLimit from "p-limit";
 import { v4 as uuidv4 } from "uuid";
-import { authConfig } from "@discordgate/shared/config/authConfig.js";
+import { authConfig } from "@DiscordDam/shared/config/authConfig.js";
 import {
   GuildVerificationError,
   UnauthorizedInternalCallError,
   type VerificationResult,
-} from "@discordgate/shared";
+} from "@DiscordDam/shared";
 import { redisService } from "./redisService.js";
 import { logger } from "../utils/logger.js";
 
@@ -67,10 +67,9 @@ export class GuildVerifierService {
 
     let data: unknown;
     try {
-      const response = await this.httpClient.get<unknown>(
-        `/internal/verify/${discordUserId}`,
-        { headers: { "x-request-id": requestId } },
-      );
+      const response = await this.httpClient.get<unknown>(`/internal/verify/${discordUserId}`, {
+        headers: { "x-request-id": requestId },
+      });
       data = response.data;
       logger.info("Guild verification response", {
         discordUserId,

@@ -1,5 +1,5 @@
 {
-  "name": "@discordgate/auth-server",
+  "name": "@DiscordDam/auth-server",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -13,7 +13,7 @@
     "test:unit": "vitest run --dir tests/unit"
   },
   "dependencies": {
-    "@discordgate/shared": "workspace:*",
+    "@DiscordDam/shared": "workspace:*",
     "express": "^4.21.2",
     "ioredis": "^5.4.1",
     "jsonwebtoken": "^9.0.2",

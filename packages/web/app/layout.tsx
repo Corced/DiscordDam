@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: { default: "DiscordGate", template: "%s — DiscordGate" },
+  title: { default: "DiscordDam", template: "%s — DiscordDam" },
   description: "Members-only API access gated by Discord membership.",
   // Members-only site — nothing gets indexed.
   robots: { index: false, follow: false },

@@ -2,20 +2,20 @@
 
 ## Overview
 
-DiscordGate gates access to a web API behind Discord server membership.
+DiscordDam gates access to a web API behind Discord server membership.
 Two services cooperate: an Express auth-server that drives the OAuth2 flow
 and issues JWTs, and a Discord.js bot that maintains a live member cache
 of the target guild. Both import types, constants, and helpers from
-`@discordgate/shared`.
+`@DiscordDam/shared`.
 
 ## Components
 
-| Component | Role |
-|---|---|
-| `packages/auth-server` | Express backend: OAuth2 redirect/callback, membership check, JWT issue/refresh, `/internal/health` on `PORT` |
-| `packages/bot` | Discord.js v14 gateway client; keeps member cache of `TARGET_GUILD_ID`; answers membership queries + `/internal/health` on `BOT_PORT` |
-| `packages/shared` | Types, constants, utilities shared by both services |
-| `infra/` | Dockerfiles (per package), docker-compose, Nginx, GitHub Actions |
+| Component              | Role                                                                                                                                  |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/auth-server` | Express backend: OAuth2 redirect/callback, membership check, JWT issue/refresh, `/internal/health` on `PORT`                          |
+| `packages/bot`         | Discord.js v14 gateway client; keeps member cache of `TARGET_GUILD_ID`; answers membership queries + `/internal/health` on `BOT_PORT` |
+| `packages/shared`      | Types, constants, utilities shared by both services                                                                                   |
+| `infra/`               | Dockerfiles (per package), docker-compose, Nginx, GitHub Actions                                                                      |
 
 ## Authentication flow
 
@@ -41,9 +41,9 @@ gateway-maintained cache, with Discord REST API fallback.
 
 ## Ports
 
-| Port | Service | Exposure |
-|---|---|---|
-| 3001 | auth-server | Public via Nginx (HTTPS in production) |
+| Port | Service          | Exposure                                       |
+| ---- | ---------------- | ---------------------------------------------- |
+| 3001 | auth-server      | Public via Nginx (HTTPS in production)         |
 | 3002 | bot internal API | Internal network only — never proxied publicly |
 
 ## Data stores

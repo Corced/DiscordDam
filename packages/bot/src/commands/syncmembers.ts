@@ -4,7 +4,7 @@ import {
   type APIEmbedField,
   type ChatInputCommandInteraction,
 } from "discord.js";
-import { botConfig } from "@discordgate/shared/config/botConfig.js";
+import { botConfig } from "@DiscordDam/shared/config/botConfig.js";
 import { client } from "../client.js";
 import { authWebhookService } from "../services/authWebhook.js";
 import { redisService } from "../services/redisService.js";

@@ -1,5 +1,5 @@
 {
-  "name": "discordgate",
+  "name": "DiscordDam",
   "version": "0.1.0",
   "private": true,
   "description": "Discord-OAuth2-gated access control system for a web API",

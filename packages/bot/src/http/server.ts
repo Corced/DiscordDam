@@ -1,5 +1,5 @@
 import express, { type ErrorRequestHandler } from "express";
-import { botConfig } from "@discordgate/shared/config/botConfig.js";
+import { botConfig } from "@DiscordDam/shared/config/botConfig.js";
 import { logger } from "../utils/logger.js";
 import { verifyRouter } from "./routes/verify.js";
 

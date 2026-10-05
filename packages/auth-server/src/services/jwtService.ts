@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
-import { authConfig } from "@discordgate/shared/config/authConfig.js";
-import { InvalidTokenError, TokenExpiredError } from "@discordgate/shared";
+import { authConfig } from "@DiscordDam/shared/config/authConfig.js";
+import { InvalidTokenError, TokenExpiredError } from "@DiscordDam/shared";
 import { logger } from "../utils/logger.js";
 import { RedisService, redisService } from "./redisService.js";
 
@@ -52,11 +52,10 @@ export class JWTService {
   signAccessToken(payload: Omit<AccessTokenPayload, "iat" | "exp" | "jti" | "type">): string {
     const jti = uuidv4();
     // Security: role is always capped at MEMBER for Discord OAuth users
-    return jwt.sign(
-      { ...payload, role: "MEMBER", jti, type: "access" },
-      this.secret,
-      { algorithm: "HS256", expiresIn: authConfig.JWT_EXPIRY },
-    );
+    return jwt.sign({ ...payload, role: "MEMBER", jti, type: "access" }, this.secret, {
+      algorithm: "HS256",
+      expiresIn: authConfig.JWT_EXPIRY,
+    });
   }
 
   /**
@@ -65,11 +64,10 @@ export class JWTService {
    */
   signRefreshToken(discordUserId: string): { token: string; jti: string } {
     const jti = uuidv4();
-    const token = jwt.sign(
-      { sub: discordUserId, jti, type: "refresh" },
-      this.secret,
-      { algorithm: "HS256", expiresIn: authConfig.REFRESH_TOKEN_EXPIRY },
-    );
+    const token = jwt.sign({ sub: discordUserId, jti, type: "refresh" }, this.secret, {
+      algorithm: "HS256",
+      expiresIn: authConfig.REFRESH_TOKEN_EXPIRY,
+    });
     return { token, jti };
   }
 

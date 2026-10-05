@@ -1,6 +1,6 @@
 import { Router } from "express";
 import cookieParser from "cookie-parser";
-import { AuditEventType, TokenBlacklistedError, type VerificationResult } from "@discordgate/shared";
+import { AuditEventType, TokenBlacklistedError, type VerificationResult } from "@DiscordDam/shared";
 import { requestLogger, authLimiter } from "../middleware/index.js";
 import {
   discordOAuthService,
@@ -23,13 +23,11 @@ const secureCookies = process.env.NODE_ENV === "production";
 
 /** Fire-and-forget audit write — an audit failure must never fail the request. */
 function auditSafely(eventType: AuditEventType, discordId: string, ipAddress?: string): void {
-  void auditRepository
-    .log({ eventType, discordId, ipAddress })
-    .catch((error) =>
-      logger.warn("Audit log failed", {
-        error: error instanceof Error ? error.message : String(error),
-      }),
-    );
+  void auditRepository.log({ eventType, discordId, ipAddress }).catch((error) =>
+    logger.warn("Audit log failed", {
+      error: error instanceof Error ? error.message : String(error),
+    }),
+  );
 }
 
 export const authRouter = Router();
@@ -89,7 +87,7 @@ authRouter.get("/auth/discord/callback", authLimiter, async (req, res) => {
     return res.redirect("/access-denied?reason=oauth_exchange_failed");
   }
 
-let profile: DiscordUser;
+  let profile: DiscordUser;
   try {
     profile = await discordOAuthService.getUserProfile(tokenSet.accessToken);
   } catch (error) {
@@ -164,7 +162,7 @@ let profile: DiscordUser;
       sameSite: "strict",
       maxAge: REFRESH_TOKEN_TTL_MS,
     });
- // Hand off to the SPA: access token in the URL fragment (fragments are
+    // Hand off to the SPA: access token in the URL fragment (fragments are
     // never sent to servers and stay out of access logs); the refresh cookie
     // above survives the navigation. Relative path resolves against the
     // public origin (next rewrites in dev, nginx in prod).

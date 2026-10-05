@@ -2,12 +2,12 @@ import { timingSafeEqual } from "node:crypto";
 import { v4 as uuidv4 } from "uuid";
 import express, { Router, type NextFunction, type Request, type Response } from "express";
 import { z } from "zod";
-import { authConfig } from "@discordgate/shared/config/authConfig.js";
+import { authConfig } from "@DiscordDam/shared/config/authConfig.js";
 import {
   AuditEventType,
   type RevokeAccessResult,
   type UserPublicProfile,
-} from "@discordgate/shared";
+} from "@DiscordDam/shared";
 import { createRateLimiter } from "../middleware/index.js";
 import { redisService } from "../services/redisService.js";
 import { guildVerifier } from "../services/guildVerifier.js";
@@ -93,7 +93,7 @@ internalRouter.use(express.json());
 // Health route FIRST — registered before the guards, so it stays unauthenticated.
 internalRouter.get("/internal/health", async (_req, res) => {
   const [db, redis] = await Promise.all([checkDb(), checkRedis()]);
-  const status: import("@discordgate/shared").InternalHealthStatus = {
+  const status: import("@DiscordDam/shared").InternalHealthStatus = {
     status: "ok",
     db,
     redis,

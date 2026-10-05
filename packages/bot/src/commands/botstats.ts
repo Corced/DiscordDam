@@ -1,6 +1,6 @@
 import { createRequire } from "node:module";
 import { EmbedBuilder, SlashCommandBuilder, type ChatInputCommandInteraction } from "discord.js";
-import { botConfig } from "@discordgate/shared/config/botConfig.js";
+import { botConfig } from "@DiscordDam/shared/config/botConfig.js";
 import { client } from "../client.js";
 import { authWebhookService } from "../services/authWebhook.js";
 import { redisService } from "../services/redisService.js";
@@ -45,7 +45,7 @@ export async function handleBotStats(interaction: ChatInputCommandInteraction): 
     ]);
 
     const embed = new EmbedBuilder()
-      .setTitle("🤖 DiscordGate Bot Stats")
+      .setTitle("🤖 DiscordDam Bot Stats")
       .setColor(0x5865f2)
       .addFields(
         { name: "Bot Uptime", value: formatDuration(process.uptime()), inline: true },
@@ -54,8 +54,16 @@ export async function handleBotStats(interaction: ChatInputCommandInteraction): 
         { name: "Auth Server", value: health !== null ? "✅ Online" : "❌ Offline", inline: true },
         { name: "Guild Members", value: String(guild?.memberCount ?? 0), inline: true },
         { name: "Bot Version", value: botVersion, inline: true },
-        { name: "API Users (Active)", value: stats === null ? "—" : String(stats.active), inline: true },
-        { name: "API Users (Revoked)", value: stats === null ? "—" : String(stats.revoked), inline: true },
+        {
+          name: "API Users (Active)",
+          value: stats === null ? "—" : String(stats.active),
+          inline: true,
+        },
+        {
+          name: "API Users (Revoked)",
+          value: stats === null ? "—" : String(stats.revoked),
+          inline: true,
+        },
       );
 
     await interaction.reply({ embeds: [embed], ephemeral: true });
@@ -67,7 +75,9 @@ export async function handleBotStats(interaction: ChatInputCommandInteraction): 
       await interaction
         .reply({
           embeds: [
-            new EmbedBuilder().setDescription("❌ Failed to gather stats. Check bot logs.").setColor(0xed4245),
+            new EmbedBuilder()
+              .setDescription("❌ Failed to gather stats. Check bot logs.")
+              .setColor(0xed4245),
           ],
           ephemeral: true,
         })

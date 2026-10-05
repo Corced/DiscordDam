@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Access Denied",
-  description: "DiscordGate access denied.",
+  description: "DiscordDam access denied.",
 };
 
 const SERVER_NAME = process.env.NEXT_PUBLIC_SERVER_NAME ?? "our community";
@@ -16,11 +16,7 @@ const MESSAGES: Record<string, string> = {
   revoked: "Your access has been revoked by an administrator.",
 };
 
-export default function AccessDeniedPage({
-  searchParams,
-}: {
-  searchParams: { reason?: string };
-}) {
+export default function AccessDeniedPage({ searchParams }: { searchParams: { reason?: string } }) {
   const message = MESSAGES[searchParams.reason ?? ""] ?? MESSAGES.server_error!;
   const isNotMember = searchParams.reason === "not_member";
 

@@ -3,13 +3,13 @@
 # `!reset []` / `!reset null` needs docker compose ≥ 2.24 — see deviations.
 services:
   postgres:
-    ports: !reset []      # no external exposure in prod
+    ports: !reset [] # no external exposure in prod
   redis:
     ports: !reset []
   bot:
-    build: !reset null    # pull prebuilt image, never build on the server
-    volumes: !reset []    # no source mounts in prod
-    image: ghcr.io/${GITHUB_REPO}/discordgate-bot:${IMAGE_TAG}
+    build: !reset null # pull prebuilt image, never build on the server
+    volumes: !reset [] # no source mounts in prod
+    image: ghcr.io/${GITHUB_REPO}/DiscordDam-bot:${IMAGE_TAG}
     deploy:
       resources:
         limits:
@@ -23,7 +23,7 @@ services:
   auth-server:
     build: !reset null
     volumes: !reset []
-    image: ghcr.io/${GITHUB_REPO}/discordgate-auth:${IMAGE_TAG}
+    image: ghcr.io/${GITHUB_REPO}/DiscordDam-auth:${IMAGE_TAG}
     deploy:
       resources:
         limits:

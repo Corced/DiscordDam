@@ -5,7 +5,7 @@ import { getApp, getPool } from "../../setup.js";
 import { runLoginFlow } from "../../helpers.js";
 import { setMockMembership } from "../../mocks/discordApi.js";
 // ASSUMPTION: config export name + jwtSecret field.
-import { authConfig } from "@discordgate/shared/config/authConfig.js";
+import { authConfig } from "@DiscordDam/shared/config/authConfig.js";
 
 const UID = "123456789012345678";
 
@@ -88,7 +88,7 @@ describe("🔐 [SECURITY] role ceiling", () => {
     // Direct attack: a validly-signed token claiming ADMIN must never be honored.
     const forged = jwt.sign(
       { sub: UID, role: "ADMIN", type: "access" }, // ASSUMPTION claim shape
-      authConfig.jwtSecret,                        // ASSUMPTION config export + field
+      authConfig.jwtSecret, // ASSUMPTION config export + field
       { algorithm: "HS256", expiresIn: "1h" },
     );
     const res = await request(getApp())

@@ -1,10 +1,10 @@
--- DiscordGate — current schema snapshot (REFERENCE ONLY)
+-- DiscordDam — current schema snapshot (REFERENCE ONLY)
 --
 -- Documents the current state of the database; identical to the accumulated
 -- migrations in db/migrations/. Update this file whenever a migration changes
 -- the schema. Do NOT apply it manually to a database managed by migrate.ts
 -- (which also creates the schema_migrations tracking table) — run:
---   pnpm --filter @discordgate/auth-server db:migrate
+--   pnpm --filter @DiscordDam/auth-server db:migrate
 
 -- gen_random_uuid() is built into PostgreSQL 13+; verify rather than assume.
 DO $$

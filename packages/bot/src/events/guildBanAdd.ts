@@ -1,5 +1,5 @@
 import type { GuildBan } from "discord.js";
-import { botConfig } from "@discordgate/shared/config/botConfig.js";
+import { botConfig } from "@DiscordDam/shared/config/botConfig.js";
 import { logger } from "../utils/logger.js";
 import { revokeAccess } from "../services/revokeAccess.js";
 

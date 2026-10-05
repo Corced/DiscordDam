@@ -5,7 +5,7 @@ import {
   TokenBlacklistedError,
   GuildVerificationError,
   UnauthorizedInternalCallError,
-} from "@discordgate/shared";
+} from "@DiscordDam/shared";
 import { logger } from "../utils/logger.js";
 
 /** A known typed error mapped to its HTTP response shape. */
@@ -34,7 +34,11 @@ function mapKnownError(err: unknown): HttpErrorShape | undefined {
     return { status: 503, error: "Internal service unavailable", code: "INTERNAL_UNAVAILABLE" };
   }
   if (err instanceof GuildVerificationError) {
-    return { status: 503, error: "Guild verification unavailable", code: "VERIFICATION_UNAVAILABLE" };
+    return {
+      status: 503,
+      error: "Guild verification unavailable",
+      code: "VERIFICATION_UNAVAILABLE",
+    };
   }
   return undefined;
 }

@@ -12,7 +12,7 @@ import { generateKeyPairSync, randomUUID } from "node:crypto";
 import { getApp, getRedis } from "../../setup.js";
 import { decodeJwt } from "../../helpers.js";
 // ASSUMPTION: config export name + jwtSecret field.
-import { authConfig } from "@discordgate/shared/config/authConfig.js";
+import { authConfig } from "@DiscordDam/shared/config/authConfig.js";
 
 const UID = "123456789012345678";
 
@@ -32,7 +32,9 @@ describe("jwtGuard", () => {
 
   test("rejects an expired token", async () => {
     const expired = sign({}, { expiresIn: -60 });
-    const res = await request(getApp()).get("/api/protected").set("Authorization", `Bearer ${expired}`);
+    const res = await request(getApp())
+      .get("/api/protected")
+      .set("Authorization", `Bearer ${expired}`);
     expect(res.status).toBe(401);
     expect(res.body.code).toBe("TOKEN_EXPIRED"); // ASSUMPTION error code
   });
@@ -42,14 +44,20 @@ describe("jwtGuard", () => {
     const token = sign({ jti });
     // ASSUMPTION: blacklist key format used by jwtGuard.
     await getRedis().set(`blacklist:${jti}`, "1");
-    const res = await request(getApp()).get("/api/protected").set("Authorization", `Bearer ${token}`);
+    const res = await request(getApp())
+      .get("/api/protected")
+      .set("Authorization", `Bearer ${token}`);
     expect(res.status).toBe(401);
     expect(res.body.code).toBe("TOKEN_REVOKED"); // ASSUMPTION error code
   });
 
   test("rejects an alg=none token", async () => {
-    const noneToken = jwt.sign({ sub: UID, role: "MEMBER", type: "access" }, null as any, { algorithm: "none" });
-    const res = await request(getApp()).get("/api/protected").set("Authorization", `Bearer ${noneToken}`);
+    const noneToken = jwt.sign({ sub: UID, role: "MEMBER", type: "access" }, null as any, {
+      algorithm: "none",
+    });
+    const res = await request(getApp())
+      .get("/api/protected")
+      .set("Authorization", `Bearer ${noneToken}`);
     expect(res.status).toBe(401);
   });
 
@@ -59,14 +67,18 @@ describe("jwtGuard", () => {
       algorithm: "RS256",
       expiresIn: "1h",
     });
-    const res = await request(getApp()).get("/api/protected").set("Authorization", `Bearer ${confused}`);
+    const res = await request(getApp())
+      .get("/api/protected")
+      .set("Authorization", `Bearer ${confused}`);
     expect(res.status).toBe(401);
   });
 
   test("🔐 [SECURITY] rejects a validly-signed token claiming ADMIN", async () => {
     // SECURITY: This test must never be skipped.
     const forged = sign({ role: "ADMIN" } as object);
-    const res = await request(getApp()).get("/api/protected").set("Authorization", `Bearer ${forged}`);
+    const res = await request(getApp())
+      .get("/api/protected")
+      .set("Authorization", `Bearer ${forged}`);
     expect([401, 403]).toContain(res.status);
     // If verify() CAPS unknown roles to MEMBER instead of rejecting, flip to:
     // status 200 AND downstream never observes role=ADMIN.
@@ -85,13 +97,17 @@ describe("jwtGuard", () => {
 describe("roleGuard", () => {
   test("MEMBER token passes a MEMBER-guarded route", async () => {
     const token = sign({ role: "MEMBER" });
-    const res = await request(getApp()).get("/api/protected-member").set("Authorization", `Bearer ${token}`);
+    const res = await request(getApp())
+      .get("/api/protected-member")
+      .set("Authorization", `Bearer ${token}`);
     expect(res.status).toBe(200);
   });
 
   test("REVOKED role is denied on a MEMBER-guarded route", async () => {
     const revoked = sign({ role: "REVOKED" } as object);
-    const res = await request(getApp()).get("/api/protected-member").set("Authorization", `Bearer ${revoked}`);
+    const res = await request(getApp())
+      .get("/api/protected-member")
+      .set("Authorization", `Bearer ${revoked}`);
     expect([401, 403]).toContain(res.status);
     // PROBE: if this returns 200, verify() is coercing non-MEMBER roles to MEMBER —
     // that's a security finding, not a test failure to flip.

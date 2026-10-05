@@ -1,4 +1,4 @@
-# DiscordGate
+# DiscordDam
 
 Discord-OAuth2-gated access control for a web API: only verified members
 of a specific Discord server (`TARGET_GUILD_ID`) can log in. Everyone else
@@ -8,7 +8,7 @@ is blocked and shown a "join our Discord" page (`DISCORD_INVITE_LINK`).
 
 ```
 ├── packages/
-│   ├── shared/         # types, constants, utilities (@discordgate/shared)
+│   ├── shared/         # types, constants, utilities (@DiscordDam/shared)
 │   ├── bot/            # Discord.js v14 bot + internal membership API (:3002)
 │   └── auth-server/    # Express OAuth2 backend + JWT issuer (:3001)
 ├── infra/              # docker-compose (Nginx, CI to follow)
@@ -29,25 +29,25 @@ is blocked and shown a "join our Discord" page (`DISCORD_INVITE_LINK`).
 pnpm install                    # also generates pnpm-lock.yaml
 cp .env.example .env            # fill in Discord + token values
 pnpm build                      # shared → bot + auth-server (topological)
-pnpm --filter @discordgate/auth-server start   # http://localhost:3001
-pnpm --filter @discordgate/bot start           # http://localhost:3002
+pnpm --filter @DiscordDam/auth-server start   # http://localhost:3001
+pnpm --filter @DiscordDam/bot start           # http://localhost:3002
 curl http://localhost:3001/internal/health
 ```
 
 ## Scripts
 
-| Command | What it does |
-|---|---|
-| `pnpm build` | compile all workspaces (shared first) |
-| `pnpm dev` | TypeScript watch builds, all workspaces in parallel |
-| `pnpm lint` | ESLint across the repo |
-| `pnpm format` / `pnpm format:check` | Prettier write / check |
-| `pnpm clean` | remove all build output |
+| Command                             | What it does                                        |
+| ----------------------------------- | --------------------------------------------------- |
+| `pnpm build`                        | compile all workspaces (shared first)               |
+| `pnpm dev`                          | TypeScript watch builds, all workspaces in parallel |
+| `pnpm lint`                         | ESLint across the repo                              |
+| `pnpm format` / `pnpm format:check` | Prettier write / check                              |
+| `pnpm clean`                        | remove all build output                             |
 
 ## Build order
 
 `packages/shared` compiles before `packages/bot` and `packages/auth-server` —
-both import `@discordgate/shared`. This is enforced twice: pnpm runs
+both import `@DiscordDam/shared`. This is enforced twice: pnpm runs
 recursive scripts in dependency order, and each service's `tsconfig.json`
 declares a TypeScript project reference to `../shared`, so `tsc -b` builds
 it first regardless. The services never import each other — cross-service
@@ -57,8 +57,8 @@ talk is HTTP only.
 
 ```bash
 pnpm install                    # lockfile required by --frozen-lockfile
-docker build -f packages/auth-server/Dockerfile -t discordgate/auth-server .
-docker build -f packages/bot/Dockerfile -t discordgate/bot .
+docker build -f packages/auth-server/Dockerfile -t DiscordDam/auth-server .
+docker build -f packages/bot/Dockerfile -t DiscordDam/bot .
 docker compose -f infra/docker-compose.yml up
 ```
 

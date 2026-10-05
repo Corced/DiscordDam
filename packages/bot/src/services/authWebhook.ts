@@ -1,7 +1,11 @@
 import { randomUUID } from "node:crypto";
 import axios, { AxiosError, type AxiosInstance, type InternalAxiosRequestConfig } from "axios";
-import { botConfig } from "@discordgate/shared/config/botConfig.js";
-import type { InternalHealthStatus, RevokeAccessResult, UserPublicProfile } from "@discordgate/shared";
+import { botConfig } from "@DiscordDam/shared/config/botConfig.js";
+import type {
+  InternalHealthStatus,
+  RevokeAccessResult,
+  UserPublicProfile,
+} from "@DiscordDam/shared";
 import { logger } from "../utils/logger.js";
 
 const REQUEST_TIMEOUT_MS = 5_000;
@@ -142,7 +146,10 @@ export class AuthWebhookService {
    * Run `operation` with the retry ladder. Returns its result, or null once
    * every attempt is exhausted (or a non-retryable error is hit).
    */
-  private async retryWithBackoff<T>(endpoint: string, operation: () => Promise<T>): Promise<T | null> {
+  private async retryWithBackoff<T>(
+    endpoint: string,
+    operation: () => Promise<T>,
+  ): Promise<T | null> {
     const totalAttempts = RETRY_DELAYS_MS.length + 1;
     for (let attempt = 1; attempt <= totalAttempts; attempt++) {
       if (attempt > 1) {
