@@ -27,10 +27,10 @@ export function resetMockState(): void {
 
 export async function setMockMembership(userId: string, isMember: boolean): Promise<void> {
   mockState.membership.set(userId, isMember);
-  // A flipped verdict must not hide behind guildVerifier's 60s cache.
+  // A flipped verdict must not hide behind guildVerifierService's 60s cache.
   try {
-    const { guildVerifier } = await import("../../src/services/guildVerifier.js"); // ASSUMPTION path/export
-    await guildVerifier.clearCache(userId); // ASSUMPTION method name
+    const { guildVerifierService } = await import("../../src/services/guildVerifier.js"); // ASSUMPTION path/export
+    await guildVerifierService.clearCache(userId); // ASSUMPTION method name
   } catch {
     // Service not importable here — cache is already clean via per-test flushdb.
   }

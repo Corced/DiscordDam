@@ -1,7 +1,7 @@
 // PREREQUISITES — one-time, in your app factory:
 //   if (process.env.NODE_ENV === "test") {
 //     app.get("/api/protected", jwtGuard, (_req, res) => res.json({ ok: true }));
-//     app.get("/api/protected-member", jwtGuard, roleGuard("MEMBER"), (_req, res) => res.json({ ok: true }));
+//     app.get("/api/protected-member", jwtGuard, requireRole("MEMBER"), (_req, res) => res.json({ ok: true }));
 //   }
 // …and createApp must accept an optional rate-limit override for the 429 test:
 //   createApp({ rateLimit: { windowMs: 60_000, max: 2 } })
@@ -11,23 +11,23 @@ import jwt from "jsonwebtoken";
 import { generateKeyPairSync, randomUUID } from "node:crypto";
 import { getApp, getRedis } from "../../setup.js";
 import { decodeJwt } from "../../helpers.js";
-// ASSUMPTION: config export name + jwtSecret field.
 import { authConfig } from "@DiscordDam/shared/config/authConfig.js";
+import { jwtGuard, requireRole } from "../../../src/middleware/index.js";
 
 const UID = "123456789012345678";
 
 const sign = (payload: object, opts: jwt.SignOptions = {}): string =>
-  jwt.sign({ sub: UID, type: "access", role: "MEMBER", ...payload }, authConfig.jwtSecret, {
+  jwt.sign({ sub: UID, type: "access", role: "MEMBER", ...payload }, authConfig.JWT_SECRET, {
     algorithm: "HS256",
     expiresIn: "1h",
     ...opts,
-  }); // ASSUMPTION claim shape + config field
+  });
 
 describe("jwtGuard", () => {
   test("rejects a missing Authorization header", async () => {
     const res = await request(getApp()).get("/api/protected");
     expect(res.status).toBe(401);
-    expect(res.body.code).toBe("NO_TOKEN"); // ASSUMPTION error code
+    expect(res.body.code).toBe("NO_TOKEN");
   });
 
   test("rejects an expired token", async () => {
@@ -36,19 +36,18 @@ describe("jwtGuard", () => {
       .get("/api/protected")
       .set("Authorization", `Bearer ${expired}`);
     expect(res.status).toBe(401);
-    expect(res.body.code).toBe("TOKEN_EXPIRED"); // ASSUMPTION error code
+    expect(res.body.code).toBe("TOKEN_EXPIRED");
   });
 
   test("rejects a blacklisted token jti", async () => {
     const jti = randomUUID();
     const token = sign({ jti });
-    // ASSUMPTION: blacklist key format used by jwtGuard.
     await getRedis().set(`blacklist:${jti}`, "1");
     const res = await request(getApp())
       .get("/api/protected")
       .set("Authorization", `Bearer ${token}`);
     expect(res.status).toBe(401);
-    expect(res.body.code).toBe("TOKEN_REVOKED"); // ASSUMPTION error code
+    expect(res.body.code).toBe("TOKEN_REVOKED");
   });
 
   test("rejects an alg=none token", async () => {
@@ -116,28 +115,29 @@ describe("roleGuard", () => {
 
 describe("rateLimiter", () => {
   test("returns 429 with Retry-After once the limit is exceeded", async () => {
-    // ASSUMPTION: createApp({ rateLimit }) test override — see PREREQUISITES above.
-    const { createApp } = await import("../../../src/app.js");
+    // createApp({ rateLimit }) test override — see PREREQUISITES above.
+    const { createApp } = await import("../../src/app.js");
     const tight = createApp({ rateLimit: { windowMs: 60_000, max: 2 } });
     const agent = request(tight);
     expect((await agent.get("/auth/discord")).status).toBe(302);
     expect((await agent.get("/auth/discord")).status).toBe(302);
     const limited = await agent.get("/auth/discord");
     expect(limited.status).toBe(429);
-    expect(limited.headers["retry-after"]).toBeTruthy(); // ASSUMPTION limiter sets Retry-After
+    expect(limited.headers["retry-after"]).toBeTruthy();
   });
 });
 
 describe("infrastructure middleware", () => {
   test("attaches a request id to responses", async () => {
-    const res = await request(getApp()).get("/internal/health"); // unauthenticated per 11-P
-    expect(res.headers["x-request-id"]).toBeTruthy(); // ASSUMPTION header name
+    // /auth/discord passes through requestLogger (unlike /internal/health which is skipped)
+    const res = await request(getApp()).get("/auth/discord");
+    expect(res.headers["x-request-id"]).toBeTruthy();
   });
 
   test("error responses carry a typed shape and never leak a stack", async () => {
     const res = await request(getApp()).get("/definitely-not-a-route");
     expect(res.status).toBe(404);
-    expect(res.body.code ?? res.body.error).toBeTruthy(); // ASSUMPTION error shape
+    expect(res.body.code ?? res.body.error).toBeTruthy();
     expect("stack" in res.body).toBe(false);
   });
 });

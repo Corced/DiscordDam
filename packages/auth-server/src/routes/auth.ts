@@ -8,7 +8,7 @@ import {
   type DiscordTokenSet,
   type DiscordUser,
 } from "../services/discordOAuth.js";
-import { guildVerifier } from "../services/guildVerifier.js";
+import { guildVerifierService } from "../services/guildVerifier.js";
 import { jwtService } from "../services/jwtService.js";
 import { userRepository } from "../db/repositories/userRepository.js";
 import { sessionRepository } from "../db/repositories/sessionRepository.js";
@@ -99,11 +99,11 @@ authRouter.get("/auth/discord/callback", authLimiter, async (req, res) => {
 
   let verification: VerificationResult;
   try {
-    verification = await guildVerifier.verifyMembership(profile.id);
+    verification = await guildVerifierService.verifyMembership(profile.id);
     if (!verification.isMember) {
       // Retry once past the 60s verifier cache — user may have joined moments ago.
-      guildVerifier.clearCache(profile.id);
-      verification = await guildVerifier.verifyMembership(profile.id);
+      guildVerifierService.clearCache(profile.id);
+      verification = await guildVerifierService.verifyMembership(profile.id);
     }
   } catch (error) {
     logger.error("Guild verification unavailable during login", {

@@ -14,11 +14,16 @@ const redisUrl = new URL(redisBase);
 redisUrl.pathname = "/15";
 process.env.REDIS_URL = redisUrl.toString();
 
-// Test-only defaults (real env wins). Extend until crash-fast config stops complaining —
-// it tells you exactly what's missing.
-process.env.JWT_SECRET ??= "test-jwt-secret";           // ASSUMPTION env name
-process.env.INTERNAL_SECRET ??= "test-internal-secret"; // ASSUMPTION env name
-process.env.DISCORD_CLIENT_ID ??= "test-client-id";
-process.env.DISCORD_CLIENT_SECRET ??= "test-client-secret";
-process.env.DISCORD_REDIRECT_URI ??= "http://localhost:3000/auth/discord/callback";
-process.env.TARGET_GUILD_ID ??= "test-guild-id";
+// Test-only defaults that satisfy the zod schema in authConfig.
+// Config tells you exactly what's missing — extend until it imports cleanly.
+process.env.JWT_SECRET ??= "test-jwt-secret-64-characters-long-for-testing-purposes-only";
+process.env.BOT_INTERNAL_SECRET ??= "test-internal-secret-64-characters-long-for-testing-purposes";
+process.env.DISCORD_CLIENT_ID ??= "123456789012345678";
+process.env.DISCORD_CLIENT_SECRET ??= "test-client-secret-at-least-30-characters-long";
+process.env.DISCORD_REDIRECT_URI ??= "http://localhost:3001/auth/discord/callback";
+process.env.TARGET_GUILD_ID ??= "123456789012345678";
+process.env.SITE_URL ??= "http://localhost:3000";
+process.env.AUTH_SERVER_INTERNAL_URL ??= "http://localhost:3001";
+process.env.BOT_INTERNAL_URL ??= "http://localhost:3002";
+process.env.DISCORD_INVITE_LINK ??= "https://discord.gg/example";
+process.env.PORT ??= "3001";

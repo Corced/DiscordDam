@@ -30,7 +30,11 @@ export interface InternalHealthStatus {
 
 /** Response body of `GET /internal/stats`. */
 export interface UserApiStats {
+  /** Total registered API users. */
+  total: number;
+  /** Users with ACTIVE status. */
   active: number;
+  /** Users with REVOKED status. */
   revoked: number;
 }
 

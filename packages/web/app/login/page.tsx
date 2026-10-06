@@ -4,6 +4,7 @@ import { StartDiscordLogin } from "@/components/StartDiscordLogin";
 export const metadata: Metadata = {
   title: "Login",
   description: "Sign in with Discord to access DiscordDam.",
+  robots: { index: false, follow: false },
 };
 
 const SERVER_NAME = process.env.NEXT_PUBLIC_SERVER_NAME ?? "our community";

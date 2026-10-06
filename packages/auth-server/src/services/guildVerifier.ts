@@ -170,4 +170,4 @@ export class GuildVerifierService {
 }
 
 /** Singleton used by the OAuth callback and token refresh flows. */
-export const guildVerifier = new GuildVerifierService();
+export const guildVerifierService = new GuildVerifierService();

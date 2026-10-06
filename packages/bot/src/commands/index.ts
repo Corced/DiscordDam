@@ -8,7 +8,7 @@ import { botStatsCommand, handleBotStats } from "./botstats.js";
 import { syncMembersCommand, handleSyncMembers } from "./syncmembers.js";
 
 /** All slash commands, registration-ready (used by registerCommands). */
-export const commandDefinitions = [
+export const commands = [
   checkAccessCommand,
   revokeAccessCommand,
   whitelistCommand,
@@ -35,7 +35,7 @@ const handlers = new Map<string, CommandHandler>([
 export async function registerCommands(): Promise<void> {
   try {
     const rest = new REST({ version: "10" }).setToken(botConfig.DISCORD_BOT_TOKEN);
-    const body = commandDefinitions.map((command) => command.toJSON());
+    const body = commands.map((command) => command.toJSON());
     if (botConfig.REGISTER_COMMANDS_GLOBALLY) {
       await rest.put(Routes.applicationCommands(botConfig.DISCORD_CLIENT_ID), { body });
       logger.info("Slash commands registered globally", { count: body.length });

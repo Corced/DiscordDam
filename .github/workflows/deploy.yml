@@ -192,7 +192,7 @@ jobs:
 
   notify:
     # Terminal notifier: exactly one Discord post per pipeline run (13-P §5).
-    needs: [deploy-staging, e2e-tests, rollback-staging, deploy-production]
+    needs: [build-and-push, deploy-staging, e2e-tests, rollback-staging, deploy-production]
     if: always()
     runs-on: ubuntu-latest
     env:
@@ -213,4 +213,3 @@ jobs:
           title: "❌ DiscordDam pipeline FAILED"
           description: "tag: `${{ needs.build-and-push.outputs.image-tag }}`\n${{ env.RESULTS }}\n${{ github.event.head_commit.url }}"
           color: 0xFF0000
-# notify references needs.build-and-push.outputs but doesn't list it in needs — add build-and-push to its needs: array if your runner flags the missing context (harmless to include; left out only to keep the chain readable... actually, include it — one word, and some runner versions are strict). Change line: needs: [build-and-push, deploy-staging, e2e-tests, rollback-staging, deploy-production].

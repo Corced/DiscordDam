@@ -15,6 +15,14 @@ BEGIN
 END
 $$;
 
+-- Applied-migration tracking. migrate.ts creates this at runtime too
+-- (CREATE TABLE IF NOT EXISTS) — mirrored here as the reference snapshot.
+CREATE TABLE IF NOT EXISTS schema_migrations (
+  id         SERIAL PRIMARY KEY,
+  filename   VARCHAR(255) NOT NULL UNIQUE,
+  applied_at TIMESTAMPTZ  NOT NULL DEFAULT now()
+);
+
 CREATE TABLE users (
   id            UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
   discord_id    VARCHAR(20)  NOT NULL,

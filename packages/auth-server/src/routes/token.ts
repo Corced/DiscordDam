@@ -2,7 +2,7 @@ import { Router } from "express";
 import cookieParser from "cookie-parser";
 import { TokenBlacklistedError, type VerificationResult } from "@DiscordDam/shared";
 import { requestLogger, refreshLimiter } from "../middleware/index.js";
-import { guildVerifier } from "../services/guildVerifier.js";
+import { guildVerifierService } from "../services/guildVerifier.js";
 import { jwtService } from "../services/jwtService.js";
 import { userRepository } from "../db/repositories/userRepository.js";
 import { logger } from "../utils/logger.js";
@@ -62,7 +62,7 @@ tokenRouter.post("/token/refresh", refreshLimiter, async (req, res) => {
 
   let verification: VerificationResult;
   try {
-    verification = await guildVerifier.verifyMembership(payload.sub);
+    verification = await guildVerifierService.verifyMembership(payload.sub);
   } catch (error) {
     // Bot unreachable: fail soft — keep the cookie; the current access token
     // stays valid and the client retries. Infra failure must not log users out.

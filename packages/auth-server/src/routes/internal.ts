@@ -12,7 +12,7 @@ import {
 } from "@DiscordDam/shared";
 import { createRateLimiter } from "../middleware/index.js";
 import { redisService } from "../services/redisService.js";
-import { guildVerifier } from "../services/guildVerifier.js";
+import { guildVerifierService } from "../services/guildVerifier.js";
 import { userRepository } from "../db/repositories/userRepository.js";
 import { sessionRepository } from "../db/repositories/sessionRepository.js";
 import { auditRepository } from "../db/repositories/auditRepository.js";
@@ -148,7 +148,7 @@ internalRouter.post("/internal/revoke-access", async (req, res) => {
   await userRepository.revokeUserAccess(discordUserId, reason);
   const sessionsRevoked = await sessionRepository.revokeAllUserSessions(dbUser.id);
   await redisService.deleteAllUserRefreshTokens(discordUserId);
-  guildVerifier.clearCache(discordUserId);
+  guildVerifierService.clearCache(discordUserId);
 
   const eventType = eventTypeForReason(reason);
   // Fire-and-forget: a failed audit insert must not 500 an otherwise
@@ -215,7 +215,7 @@ internalRouter.post("/internal/whitelist", async (req, res) => {
   }
   // A cached verdict masks both directions: a stale isMember:false hides a new
   // whitelist entry, a stale override hides a removal. Drop it either way.
-  guildVerifier.clearCache(discordUserId);
+  guildVerifierService.clearCache(discordUserId);
 
   res.json({ success: true });
 });

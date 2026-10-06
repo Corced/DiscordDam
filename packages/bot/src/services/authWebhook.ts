@@ -37,6 +37,8 @@ function isRetryable(error: AxiosError): boolean {
  */
 export class AuthWebhookService {
   private readonly httpClient: AxiosInstance;
+  /** Health probes deliberately carry no internal secret (endpoint is unauthenticated). */
+  private readonly healthClient: AxiosInstance;
 
   /**
    * @param httpClient Optional axios instance for unit-test injection.
@@ -49,7 +51,16 @@ export class AuthWebhookService {
         timeout: REQUEST_TIMEOUT_MS,
         headers: { "x-internal-secret": botConfig.BOT_INTERNAL_SECRET },
       });
+    this.healthClient =
+      httpClient ??
+      axios.create({
+        baseURL: botConfig.AUTH_SERVER_INTERNAL_URL,
+        timeout: REQUEST_TIMEOUT_MS,
+      });
     this.attachInterceptors(this.httpClient);
+    if (this.healthClient !== this.httpClient) {
+      this.attachInterceptors(this.healthClient);
+    }
   }
 
   /**
@@ -139,7 +150,7 @@ export class AuthWebhookService {
    */
   public async checkHealth(): Promise<InternalHealthStatus | null> {
     return this.retryWithBackoff("/internal/health", async () => {
-      const response = await this.httpClient.get<InternalHealthStatus>("/internal/health");
+      const response = await this.healthClient.get<InternalHealthStatus>("/internal/health");
       return response.data;
     });
   }

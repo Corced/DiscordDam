@@ -2,6 +2,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { pool } from "./pool.js";
+import { logger } from "../utils/logger.js";
 
 // Resolves to packages/auth-server/db/migrations whether this runs compiled
 // (dist/db/migrate.js) or from source (src/db/migrate.ts) — both sit two
@@ -41,18 +42,18 @@ export async function runMigrations(): Promise<void> {
       await client.query("INSERT INTO schema_migrations (filename) VALUES ($1)", [filename]);
       await client.query("COMMIT");
       count += 1;
-      console.info(`✅ migration applied: ${filename}`);
+      logger.info(`✅ migration applied: ${filename}`);
     } catch (err) {
       await client.query("ROLLBACK").catch(() => undefined);
-      console.error(`❌ migration failed: ${filename}`);
-      console.error(err);
+      logger.error(`❌ migration failed: ${filename}`);
+      logger.error("migration error", { err });
       process.exit(1);
     } finally {
       client.release();
     }
   }
 
-  console.info(`✅ migrations complete: ${count} applied this run, ${files.length} known`);
+  logger.info(`✅ migrations complete: ${count} applied this run, ${files.length} known`);
 }
 
 // CLI entry: pnpm --filter @DiscordDam/auth-server db:migrate
@@ -60,7 +61,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   runMigrations()
     .then(() => pool.end())
     .catch((err: unknown) => {
-      console.error("❌ migrations failed:", err);
+      logger.error("❌ migrations failed:", { err });
       return pool.end().then(() => {
         process.exitCode = 1;
       });

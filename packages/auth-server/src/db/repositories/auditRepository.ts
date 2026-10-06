@@ -1,5 +1,6 @@
 import { query } from "../pool.js";
 import { AuditEventType } from "@DiscordDam/shared";
+import { logger } from "../../utils/logger.js";
 
 export interface AuditEvent {
   eventType: AuditEventType;
@@ -53,7 +54,7 @@ export const auditRepository = {
     } catch (err) {
       // Audit is best-effort: the security event already happened — a
       // logging failure must never break the flow that triggered it.
-      console.error("❌ audit log write failed:", err);
+      logger.error("Audit log insert failed", { err, event });
     }
   },
 

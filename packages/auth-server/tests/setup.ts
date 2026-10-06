@@ -5,8 +5,8 @@ import { botServerHandlers } from "./mocks/botServer.js";
 
 export const mswServer = setupServer(...discordApiHandlers, ...botServerHandlers);
 
-// ASSUMPTION: table names — single point of edit if your schema differs.
-const TRUNCATE = "TRUNCATE users, sessions, whitelist, audit_log RESTART IDENTITY CASCADE";
+// whitelist is Redis-only — no SQL table. TRUNCATE only real tables.
+const TRUNCATE = "TRUNCATE users, sessions, audit_log RESTART IDENTITY CASCADE";
 
 type AnyPool = { query: (sql: string, params?: unknown[]) => Promise<any>; end: () => Promise<void> };
 type AnyRedis = {
@@ -36,14 +36,18 @@ export const getRedis = () => {
 beforeAll(async () => {
   mswServer.listen({ onUnhandledRequest: "error" }); // unmocked egress = hard failure
 
-  const { runMigrations } = await import("../src/db/migrate.js"); // ASSUMPTION export name
+  const { runMigrations } = await import("../src/db/migrate.js");
   await runMigrations(); // must be idempotent — runs once per test file
 
-  const appModule = await import("../src/app.js"); // ASSUMPTION path + createApp factory
+  const appModule = await import("../src/app.js");
   app = appModule.createApp();
 
-  pool = (await import("../src/db/pool.js")).pool;                   // ASSUMPTION named export
-  redis = (await import("../src/services/redisService.js")).default; // ASSUMPTION default ioredis export
+  const poolModule = await import("../src/db/pool.js");
+  pool = poolModule.pool;
+
+  const redisModule = await import("../src/services/redisService.js");
+  // redisService is a named export (singleton), access its private `redis` field for flushdb/quit
+  redis = (redisModule.redisService as any).redis;
 });
 
 beforeEach(async () => {

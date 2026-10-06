@@ -1,7 +1,8 @@
 -- 002: allow LOGIN_DENIED in audit_log.event_type.
 -- LOGIN_DENIED (shared AuditEventType) is emitted by routes/auth.ts to deny
 -- REVOKED users distinctly from non-members; without this it violates
--- audit_event_type_allowed and auditRepository.log silently drops the row.
+-- audit_event_type_allowed — auditRepository.log catches the error, logs it,
+-- and swallows (best-effort): the row is lost but the failure is logged.
 ALTER TABLE audit_log DROP CONSTRAINT audit_event_type_allowed;
 ALTER TABLE audit_log ADD CONSTRAINT audit_event_type_allowed CHECK (event_type IN (
   'LOGIN_SUCCESS', 'LOGIN_DENIED_NOT_MEMBER', 'LOGIN_DENIED', 'TOKEN_REVOKED', 'TOKEN_REFRESHED',

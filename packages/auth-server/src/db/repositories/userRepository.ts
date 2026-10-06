@@ -75,17 +75,17 @@ export const userRepository = {
     return toUser(row);
   },
 
-  /** Count users by role — feeds /botstats. */
+  /** Count users by status — feeds /botstats. */
   async getUserStats(): Promise<UserApiStats> {
-    const { rows } = await query<{ role: string; count: number }>(
-      "SELECT role, COUNT(*)::int AS count FROM users GROUP BY role",
+    const { rows } = await query<{ total: number; active: number; revoked: number }>(
+      `SELECT COUNT(*)::int AS total,
+              COUNT(*) FILTER (WHERE status = 'ACTIVE')::int AS active,
+              COUNT(*) FILTER (WHERE status = 'REVOKED')::int AS revoked
+       FROM users`,
     );
-    const stats: UserApiStats = { active: 0, revoked: 0 };
-    for (const row of rows) {
-      if (row.role === "MEMBER") stats.active = row.count;
-      else if (row.role === "REVOKED") stats.revoked = row.count;
-    }
-    return stats;
+    const row = rows[0];
+    if (!row) throw new Error("getUserStats: aggregate query produced no row");
+    return row;
   },
 
   /** Discord IDs of all MEMBER-role users (revoked excluded) — feeds /syncmembers. */
@@ -94,6 +94,12 @@ export const userRepository = {
       "SELECT discord_id FROM users WHERE role = 'MEMBER'",
     );
     return rows.map((row) => row.discord_id);
+  },
+
+  /** Every ACTIVE-status user row. */
+  async getAllActiveUsers(): Promise<User[]> {
+    const { rows } = await query<UserRow>("SELECT * FROM users WHERE status = 'ACTIVE'");
+    return rows.map(toUser);
   },
 
   async findByDiscordId(discordId: string): Promise<User | null> {
