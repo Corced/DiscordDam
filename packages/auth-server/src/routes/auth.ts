@@ -1,6 +1,6 @@
 import { Router } from "express";
 import cookieParser from "cookie-parser";
-import { AuditEventType, TokenBlacklistedError, type VerificationResult } from "@DiscordDam/shared";
+import { AuditEventType, type VerificationResult } from "@DiscordDam/shared";
 import { requestLogger, authLimiter } from "../middleware/index.js";
 import {
   discordOAuthService,

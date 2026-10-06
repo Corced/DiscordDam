@@ -1,5 +1,7 @@
 import { beforeAll, beforeEach, afterAll } from "vitest";
 import { setupServer } from "msw/node";
+import type { Pool } from "pg";
+import type Redis from "ioredis";
 import { discordApiHandlers, resetMockState } from "./mocks/discordApi.js";
 import { botServerHandlers } from "./mocks/botServer.js";
 
@@ -8,17 +10,11 @@ export const mswServer = setupServer(...discordApiHandlers, ...botServerHandlers
 // whitelist is Redis-only — no SQL table. TRUNCATE only real tables.
 const TRUNCATE = "TRUNCATE users, sessions, audit_log RESTART IDENTITY CASCADE";
 
-type AnyPool = { query: (sql: string, params?: unknown[]) => Promise<any>; end: () => Promise<void> };
-type AnyRedis = {
-  flushdb: () => Promise<unknown>;
-  quit: () => Promise<unknown>;
-  get: (k: string) => Promise<string | null>;
-  set: (k: string, v: string) => Promise<unknown>;
-};
+let app: Express | null = null;
+let pool: Pool | null = null;
+let redis: Redis | null = null;
 
-let app: any;
-let pool: AnyPool;
-let redis: AnyRedis;
+import type { Express } from "express";
 
 export const getApp = () => {
   if (!app) throw new Error("setup: app not initialised yet");
@@ -47,13 +43,13 @@ beforeAll(async () => {
 
   const redisModule = await import("../src/services/redisService.js");
   // redisService is a named export (singleton), access its private `redis` field for flushdb/quit
-  redis = (redisModule.redisService as any).redis;
+  redis = (redisModule.redisService as { redis: Redis }).redis;
 });
 
 beforeEach(async () => {
   resetMockState();
-  await pool.query(TRUNCATE);
-  await redis.flushdb();
+  await pool!.query(TRUNCATE);
+  await redis!.flushdb();
 });
 
 afterAll(async () => {

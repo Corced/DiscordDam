@@ -10,9 +10,7 @@ import request from "supertest";
 import jwt from "jsonwebtoken";
 import { generateKeyPairSync, randomUUID } from "node:crypto";
 import { getApp, getRedis } from "../../setup.js";
-import { decodeJwt } from "../../helpers.js";
 import { authConfig } from "@DiscordDam/shared/config/authConfig.js";
-import { jwtGuard, requireRole } from "../../../src/middleware/index.js";
 
 const UID = "123456789012345678";
 
@@ -51,7 +49,7 @@ describe("jwtGuard", () => {
   });
 
   test("rejects an alg=none token", async () => {
-    const noneToken = jwt.sign({ sub: UID, role: "MEMBER", type: "access" }, null as any, {
+    const noneToken = jwt.sign({ sub: UID, role: "MEMBER", type: "access" }, "" as jwt.Secret, {
       algorithm: "none",
     });
     const res = await request(getApp())

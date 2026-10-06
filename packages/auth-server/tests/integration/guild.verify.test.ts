@@ -1,7 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { guildVerifierService } from "../../../src/services/guildVerifier.js";
 import { mockState, setMockMembership } from "../../mocks/discordApi.js";
-import { getRedis } from "../../setup.js";
 import { redisService } from "../../../src/services/redisService.js";
 
 describe("guildVerifierService caching", () => {

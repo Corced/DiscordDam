@@ -51,12 +51,12 @@ let authLimiterImpl: RequestHandler = createRateLimiter({
   message: "Too many auth attempts",
 });
 
-let apiLimiterImpl: RequestHandler = createRateLimiter({
+const apiLimiterImpl: RequestHandler = createRateLimiter({
   windowSeconds: 60,
   maxRequests: 100,
 });
 
-let refreshLimiterImpl: RequestHandler = createRateLimiter({
+const refreshLimiterImpl: RequestHandler = createRateLimiter({
   windowSeconds: 60,
   maxRequests: 20,
 });

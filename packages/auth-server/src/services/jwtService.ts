@@ -3,7 +3,8 @@ import { v4 as uuidv4 } from "uuid";
 import { authConfig } from "@DiscordDam/shared/config/authConfig.js";
 import { InvalidTokenError, TokenExpiredError } from "@DiscordDam/shared";
 import { logger } from "../utils/logger.js";
-import { RedisService, redisService } from "./redisService.js";
+import type { RedisService } from "./redisService.js";
+import { redisService } from "./redisService.js";
 
 /** Everything a verified access token guarantees about the caller. */
 export interface AccessTokenPayload {

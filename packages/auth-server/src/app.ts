@@ -1,11 +1,10 @@
-import { authConfig } from "@DiscordDam/shared/config/authConfig.js";
 import "express-async-errors";
 import express, { type ErrorRequestHandler, type Express, type Request, type Response } from "express";
 import helmet from "helmet";
 import { authRouter } from "./routes/auth.js";
 import { tokenRouter } from "./routes/token.js";
 import { internalRouter } from "./routes/internal.js";
-import { errorHandler, jwtGuard, requestLogger, requireRole, authLimiter } from "./middleware/index.js";
+import { jwtGuard, requireRole } from "./middleware/index.js";
 import { logger } from "./utils/logger.js";
 import { configureRateLimiters } from "./middleware/rateLimiter.js";
 

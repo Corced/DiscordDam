@@ -11,6 +11,7 @@
     "build": "pnpm -r build",
     "dev": "pnpm -r --parallel dev",
     "lint": "eslint . --ext .js,.cjs,.ts",
+    "typecheck": "tsc -b packages/bot packages/auth-server",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "clean": "pnpm -r clean"

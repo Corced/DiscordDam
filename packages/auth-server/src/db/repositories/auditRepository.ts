@@ -1,5 +1,5 @@
 import { query } from "../pool.js";
-import { AuditEventType } from "@DiscordDam/shared";
+import type { AuditEventType } from "@DiscordDam/shared";
 import { logger } from "../../utils/logger.js";
 
 export interface AuditEvent {

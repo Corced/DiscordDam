@@ -1,8 +1,9 @@
 import request from "supertest";
 import { getApp, getPool } from "./setup.js";
 import { setMockMembership } from "./mocks/discordApi.js";
+import type { AccessTokenPayload } from "../../../src/services/jwtService.js";
 
-export function decodeJwt(token: string): Record<string, any> {
+export function decodeJwt(token: string): AccessTokenPayload {
   return JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString());
 }
 
@@ -31,7 +32,7 @@ export async function runLoginFlow(
 
 export async function loginAs(
   discordUserId: string,
-): Promise<{ accessToken: string; cookieHeader: string; claims: Record<string, any> }> {
+): Promise<{ accessToken: string; cookieHeader: string; claims: AccessTokenPayload }> {
   await setMockMembership(discordUserId, true);
   const { callback } = await runLoginFlow(discordUserId);
   const loc = callback.headers.location as string;
@@ -46,7 +47,15 @@ export async function loginAs(
   return { accessToken, cookieHeader: refresh.split(";")[0], claims: decodeJwt(accessToken) };
 }
 
-export async function expectAuditLog(eventType: string, discordId: string): Promise<Record<string, any>> {
+export interface AuditLogRow {
+  event_type: string;
+  discord_id: string;
+  created_at: Date;
+  metadata?: object;
+  [key: string]: unknown;
+}
+
+export async function expectAuditLog(eventType: string, discordId: string): Promise<AuditLogRow> {
   const { rows } = await getPool().query(
     // ASSUMPTION: column names event_type / discord_id / created_at.
     "SELECT * FROM audit_log WHERE event_type = $1 AND discord_id = $2 ORDER BY created_at DESC LIMIT 1",

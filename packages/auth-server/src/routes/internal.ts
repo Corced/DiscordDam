@@ -9,6 +9,7 @@ import {
   type RevokeAccessResult,
   type UserApiStats,
   type UserPublicProfile,
+  type InternalHealthStatus,
 } from "@DiscordDam/shared";
 import { createRateLimiter } from "../middleware/index.js";
 import { redisService } from "../services/redisService.js";
@@ -95,7 +96,7 @@ internalRouter.use(express.json());
 // Health route FIRST — registered before the guards, so it stays unauthenticated.
 internalRouter.get("/internal/health", async (_req, res) => {
   const [db, redis] = await Promise.all([checkDb(), checkRedis()]);
-  const status: import("@DiscordDam/shared").InternalHealthStatus = {
+  const status: InternalHealthStatus = {
     status: "ok",
     db,
     redis,
