@@ -23,14 +23,14 @@ const secureCookies = process.env.NODE_ENV === "production";
 
 /** Fire-and-forget audit write — an audit failure must never fail the request. */
 function auditSafely(eventType: AuditEventType, discordId: string, ipAddress?: string): void {
-  void auditRepository.log({ eventType, discordId, ipAddress }).catch((error) =>
+  void auditRepository.log({ eventType, discordId, ipAddress }).catch((error: unknown) =>
     logger.warn("Audit log failed", {
       error: error instanceof Error ? error.message : String(error),
     }),
   );
 }
 
-export const authRouter = Router();
+export const authRouter: Router = Router();
 authRouter.use(requestLogger);
 authRouter.use(cookieParser());
 
@@ -121,9 +121,9 @@ authRouter.get("/auth/discord/callback", authLimiter, async (req, res) => {
   let dbUser;
   try {
     dbUser = await userRepository.upsertUser({
-      discordUserId: profile.id,
+      discordId: profile.id,
       username: profile.username,
-      avatar: profile.avatar,
+      avatarHash: profile.avatar ?? undefined,
     });
   } catch (error) {
     logger.error("User upsert failed", {
@@ -140,7 +140,7 @@ authRouter.get("/auth/discord/callback", authLimiter, async (req, res) => {
 
   let refreshJti: string | undefined;
   try {
-    const { token: accessToken } = await jwtService.signAccessToken({
+    const accessToken = jwtService.signAccessToken({
       sub: profile.id,
       username: profile.username,
       role: "MEMBER",
@@ -153,7 +153,6 @@ authRouter.get("/auth/discord/callback", authLimiter, async (req, res) => {
       refreshJti: jti,
       ipAddress: req.ip,
       userAgent: req.headers["user-agent"],
-      expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
     });
     auditSafely(AuditEventType.LOGIN_SUCCESS, profile.id, req.ip);
     res.cookie(REFRESH_COOKIE, refreshToken, {

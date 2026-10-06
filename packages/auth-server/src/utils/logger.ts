@@ -4,20 +4,16 @@
  * (this file is the third consumer that triggered the extraction).
  */
 export const logger = {
-  info(msg: string): void {
-    console.info(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg }));
+  debug(msg: string, extra?: Record<string, unknown>): void {
+    console.debug(JSON.stringify({ ts: new Date().toISOString(), level: "debug", msg, ...extra }));
+  },
+  info(msg: string, extra?: Record<string, unknown>): void {
+    console.info(JSON.stringify({ ts: new Date().toISOString(), level: "info", msg, ...extra }));
   },
   warn(msg: string, extra?: Record<string, unknown>): void {
     console.warn(JSON.stringify({ ts: new Date().toISOString(), level: "warn", msg, ...extra }));
   },
-  error(msg: string, err?: unknown): void {
-    console.error(
-      JSON.stringify({
-        ts: new Date().toISOString(),
-        level: "error",
-        msg,
-        err: err instanceof Error ? err.message : String(err),
-      }),
-    );
+  error(msg: string, extra?: Record<string, unknown>): void {
+    console.error(JSON.stringify({ ts: new Date().toISOString(), level: "error", msg, ...extra }));
   },
 };

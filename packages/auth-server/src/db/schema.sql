@@ -56,7 +56,7 @@ CREATE TABLE audit_log (
   created_at  TIMESTAMPTZ  NOT NULL DEFAULT now(),
   -- Keep in sync with AuditEventType in packages/shared/src/types/audit.ts.
   CONSTRAINT audit_event_type_allowed CHECK (event_type IN (
-    'LOGIN_SUCCESS', 'LOGIN_DENIED_NOT_MEMBER', 'TOKEN_REVOKED', 'TOKEN_REFRESHED',
+    'LOGIN_SUCCESS', 'LOGIN_DENIED_NOT_MEMBER', 'LOGIN_DENIED', 'TOKEN_REVOKED', 'TOKEN_REFRESHED',
     'MEMBER_LEFT_GUILD', 'MEMBER_BANNED', 'MANUAL_REVOKE', 'TOKEN_BLACKLISTED'
   ))
 );

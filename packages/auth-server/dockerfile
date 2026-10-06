@@ -17,20 +17,25 @@ RUN pnpm install --frozen-lockfile
 
 COPY packages/ ./packages/
 
+# `...` = also build workspace deps (shared) first, in topo order.
+# Path filter works regardless of the package's npm name.
 RUN pnpm --filter "./packages/auth-server..." build
 
 
 FROM node:20-alpine AS runner
 WORKDIR /app
 
-# ponytail: whole-tree copy keeps pnpm symlinks valid; `pnpm deploy` if size matters.
+# Whole-tree copy: pnpm node_modules are relative symlinks inside /app,
+# copying everything wholesale keeps them valid with zero extra config.
+# ponytail: dev deps ride into the image; slim with `pnpm deploy` if size ever matters.
 COPY --from=builder /app ./
 
 USER node
 
 EXPOSE 3001
 
-# Port literal must match PORT in .env (build-time, no env interpolation).
+# HEALTHCHECK is baked at build time; ${PORT} from env_file does NOT
+# interpolate here. This literal must match PORT in .env.
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD wget -qO- http://localhost:3001/internal/health || exit 1
 

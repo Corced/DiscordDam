@@ -27,7 +27,7 @@ const eh: ErrorRequestHandler = (err, _req, res, _next) => {
 };
 app.use(eh);
 
-const port = Number(authConfig.AUTH_SERVER_PORT);
+const port = authConfig.PORT;
 app.listen(port, () => {
   logger.info("Auth server listening", { port });
 });

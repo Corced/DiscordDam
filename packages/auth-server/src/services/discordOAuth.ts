@@ -1,13 +1,13 @@
 import { createHash, randomBytes } from "node:crypto";
 import axios, { type AxiosInstance } from "axios";
 import { authConfig } from "@DiscordDam/shared/config/authConfig.js";
+import { TokenBlacklistedError } from "@DiscordDam/shared";
 import { redisService } from "./redisService.js";
 import { logger } from "../utils/logger.js";
 
 const DISCORD_API_BASE_URL = "https://discord.com/api";
 const DISCORD_AUTHORIZE_URL = "https://discord.com/api/oauth2/authorize";
 const OAUTH_SCOPES = "identify guilds guilds.members.read";
-const PKCE_TTL_SECONDS = 300;
 const REQUEST_TIMEOUT_MS = 5_000;
 
 /** Successful Discord OAuth2 token exchange (camelCased API response). */
@@ -80,11 +80,7 @@ export class DiscordOAuthService {
     const codeVerifier = randomBytes(96).toString("base64url");
     const codeChallenge = createHash("sha256").update(codeVerifier).digest("base64url");
 
-    await redisService.storePKCE(
-      state,
-      JSON.stringify({ codeVerifier, createdAt: Date.now() }),
-      PKCE_TTL_SECONDS,
-    );
+    await redisService.storePKCE(state, { codeVerifier, createdAt: Date.now() });
 
     const params = new URLSearchParams({
       client_id: authConfig.DISCORD_CLIENT_ID,
@@ -112,7 +108,7 @@ export class DiscordOAuthService {
     if (!raw) {
       throw new InvalidStateError();
     }
-    const { codeVerifier } = JSON.parse(raw) as { codeVerifier: string };
+    const { codeVerifier } = raw;
 
     const body = new URLSearchParams({
       client_id: authConfig.DISCORD_CLIENT_ID,

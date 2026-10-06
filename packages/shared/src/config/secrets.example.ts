@@ -39,24 +39,3 @@ export const GENERATION_COMMANDS = {
     run: "op run -- node packages/auth-server/dist/index.js",
   },
 } as const;
-packages/shared/package.json (updated — zod + config subpath exports)
-{
-  "name": "@DiscordDam/shared",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": "./dist/index.js",
-    "./config/*": "./dist/config/*"
-  },
-  "scripts": {
-    "build": "tsc -b",
-    "dev": "tsc -b --watch",
-    "clean": "tsc -b --clean"
-  },
-  "dependencies": {
-    "zod": "^3.25.76"
-  }
-}

@@ -45,14 +45,20 @@ export function createRateLimiter(options: RateLimiterOptions): RequestHandler {
 }
 
 /** Login/callback attempts — strict. */
-export const authLimiter = createRateLimiter({
+export const authLimiter: RequestHandler = createRateLimiter({
   windowSeconds: 60,
   maxRequests: 10,
   message: "Too many auth attempts",
 });
 
 /** General API routes — generous. */
-export const apiLimiter = createRateLimiter({ windowSeconds: 60, maxRequests: 100 });
+export const apiLimiter: RequestHandler = createRateLimiter({
+  windowSeconds: 60,
+  maxRequests: 100,
+});
 
 /** Token refresh — between the two. */
-export const refreshLimiter = createRateLimiter({ windowSeconds: 60, maxRequests: 20 });
+export const refreshLimiter: RequestHandler = createRateLimiter({
+  windowSeconds: 60,
+  maxRequests: 20,
+});

@@ -55,5 +55,5 @@ async function verifyMembership(req: Request, res: Response): Promise<void> {
 }
 
 /** Internal-only verification routes (guarded by x-internal-secret). */
-export const verifyRouter = Router();
+export const verifyRouter: Router = Router();
 verifyRouter.get("/internal/verify/:discordUserId", requireInternalSecret, verifyMembership);

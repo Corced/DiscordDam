@@ -11,7 +11,7 @@ export interface RevokeAccessResult {
 
 /** Response body of `GET /internal/users/:discordUserId`. */
 export interface UserPublicProfile {
-  id: number;
+  id: string;
   discordUserId: string;
   username: string;
   role: "MEMBER" | "REVOKED";

@@ -2,8 +2,10 @@ import { randomUUID } from "node:crypto";
 import axios, { AxiosError, type AxiosInstance, type InternalAxiosRequestConfig } from "axios";
 import { botConfig } from "@DiscordDam/shared/config/botConfig.js";
 import type {
+  ActiveUserList,
   InternalHealthStatus,
   RevokeAccessResult,
+  UserApiStats,
   UserPublicProfile,
 } from "@DiscordDam/shared";
 import { logger } from "../utils/logger.js";

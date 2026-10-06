@@ -1,4 +1,4 @@
-import Redis from "ioredis";
+import { Redis } from "ioredis";
 import { authConfig } from "@DiscordDam/shared/config/authConfig.js";
 
 // ── Key namespaces ────────────────────────────────────────────────────────

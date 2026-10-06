@@ -1,4 +1,4 @@
-import type { GuildMember } from "discord.js";
+import type { GuildMember, PartialGuildMember } from "discord.js";
 import { botConfig } from "@DiscordDam/shared/config/botConfig.js";
 import { logger } from "../utils/logger.js";
 
@@ -7,7 +7,7 @@ import { logger } from "../utils/logger.js";
  * purposes. No API call needed in MVP.
  */
 export async function onGuildMemberUpdate(
-  oldMember: GuildMember,
+  oldMember: GuildMember | PartialGuildMember,
   newMember: GuildMember,
 ): Promise<void> {
   try {

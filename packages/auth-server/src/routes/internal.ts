@@ -5,7 +5,9 @@ import { z } from "zod";
 import { authConfig } from "@DiscordDam/shared/config/authConfig.js";
 import {
   AuditEventType,
+  type ActiveUserList,
   type RevokeAccessResult,
+  type UserApiStats,
   type UserPublicProfile,
 } from "@DiscordDam/shared";
 import { createRateLimiter } from "../middleware/index.js";
@@ -87,7 +89,7 @@ async function checkRedis(): Promise<boolean> {
   }
 }
 
-export const internalRouter = Router();
+export const internalRouter: Router = Router();
 internalRouter.use(express.json());
 
 // Health route FIRST — registered before the guards, so it stays unauthenticated.
@@ -153,7 +155,7 @@ internalRouter.post("/internal/revoke-access", async (req, res) => {
   // successful revoke (the bot would retry a completed operation).
   void auditRepository
     .log({ eventType, discordId: discordUserId, metadata: { reason, revokedBy } })
-    .catch((error) =>
+    .catch((error: unknown) =>
       logger.warn("Audit log failed", {
         error: error instanceof Error ? error.message : String(error),
       }),
@@ -179,7 +181,7 @@ internalRouter.get("/internal/users/:discordUserId", async (req, res) => {
   }
   const profile: UserPublicProfile = {
     id: dbUser.id,
-    discordUserId: dbUser.discordUserId,
+    discordUserId: dbUser.discordId,
     username: dbUser.username,
     role: dbUser.role,
     status: dbUser.status,

@@ -2,6 +2,7 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+  ComponentType,
   EmbedBuilder,
   SlashCommandBuilder,
   type ButtonInteraction,
@@ -70,6 +71,7 @@ export async function handleRevokeAccess(interaction: ChatInputCommandInteractio
     let button: ButtonInteraction;
     try {
       button = await message.awaitMessageComponent({
+        componentType: ComponentType.Button,
         filter: (i) =>
           i.user.id === interaction.user.id && (i.customId === confirmId || i.customId === CANCEL_BUTTON_ID),
         time: CONFIRM_TIMEOUT_MS,

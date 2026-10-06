@@ -1,4 +1,4 @@
-import Redis from "ioredis";
+import { Redis } from "ioredis";
 import { botConfig } from "@DiscordDam/shared/config/botConfig.js";
 import { logger } from "../utils/logger.js";
 

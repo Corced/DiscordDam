@@ -11,7 +11,7 @@ const REFRESH_COOKIE = "refresh_token";
 const REFRESH_TOKEN_TTL_MS = 604_800_000; // 7 days — must match jwtService's refresh TTL
 const secureCookies = process.env.NODE_ENV === "production";
 
-export const tokenRouter = Router();
+export const tokenRouter: Router = Router();
 tokenRouter.use(requestLogger);
 tokenRouter.use(cookieParser());
 
@@ -89,7 +89,7 @@ tokenRouter.post("/token/refresh", refreshLimiter, async (req, res) => {
   }
 
   try {
-    const { token: accessToken } = await jwtService.signAccessToken({
+    const accessToken = jwtService.signAccessToken({
       sub: payload.sub,
       username: dbUser.username,
       role: "MEMBER",
